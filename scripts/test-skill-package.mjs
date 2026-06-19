@@ -10,7 +10,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SKILL_ROOT = path.join(REPO_ROOT, 'skills', 'harness-bootstrap');
+const SKILL_ROOT = path.join(REPO_ROOT, 'skills', 'ab-harness-skill');
 const SCAN_FIXTURE = path.join(REPO_ROOT, 'tests', 'fixtures', 'minimal-repo');
 const INSTALL_FIXTURE = path.join(REPO_ROOT, 'tests', '.tmp-install');
 
@@ -20,6 +20,7 @@ const REQUIRED = [
   'templates/workflow.config.md.tpl',
   'scripts/scan-profile.mjs',
   'scripts/install-harness.mjs',
+  'scripts/generate-specs.mjs',
   'LICENSE',
 ];
 
@@ -59,13 +60,47 @@ function checkLayout() {
     const p = path.join(SKILL_ROOT, rel);
     if (!fs.existsSync(p)) fail(`missing ${rel}`);
   }
-  ok('skills/harness-bootstrap layout');
-  readFrontmatter('harness-bootstrap');
+  ok('skills/ab-harness-skill layout');
+  readFrontmatter('ab-harness-skill');
 
   const list = run('npx', ['skills', 'add', '.', '--list', '-y'], { cwd: REPO_ROOT });
   if (list.status !== 0) fail(`npx skills add --list failed:\n${list.out}`);
-  if (!/harness-bootstrap/.test(list.out)) fail('CLI did not discover harness-bootstrap');
-  ok('npx skills add --list discovers harness-bootstrap');
+  if (!/ab-harness-skill/.test(list.out)) fail('CLI did not discover ab-harness-skill');
+  ok('npx skills add --list discovers ab-harness-skill');
+}
+
+function runInstallSmoke() {
+  const fixture = path.join(REPO_ROOT, 'tests', '.tmp-harness-install');
+  fs.rmSync(fixture, { recursive: true, force: true });
+  fs.mkdirSync(fixture, { recursive: true });
+  fs.copyFileSync(
+    path.join(SCAN_FIXTURE, 'package.json'),
+    path.join(fixture, 'package.json'),
+  );
+  fs.writeFileSync(path.join(fixture, 'README.md'), '# harness install smoke\n');
+
+  const config = path.join(SKILL_ROOT, 'scripts', 'install-config.example.json');
+  const install = spawnSync(
+    process.execPath,
+    [path.join(SKILL_ROOT, 'scripts', 'install-harness.mjs'), '--config', config, '--target', fixture],
+    { encoding: 'utf8', cwd: REPO_ROOT },
+  );
+  if (install.status !== 0) fail(`install-harness failed:\n${install.stderr || install.stdout}`);
+
+  const required = [
+    'workflow.config.md',
+    'docs/workflow/README.md',
+    '.specs/README.md',
+    '.specs/codebase/overview.md',
+    '.specs/project/context.md',
+    '.specs/testing/strategy.md',
+    'scripts/generate-specs.mjs',
+  ];
+  for (const rel of required) {
+    if (!fs.existsSync(path.join(fixture, rel))) fail(`install missing ${rel}`);
+  }
+  fs.rmSync(fixture, { recursive: true, force: true });
+  ok('install-harness creates docs/workflow and .specs tree');
 }
 
 function runScanSmoke() {
@@ -92,7 +127,7 @@ function installSmoke() {
   );
   fs.writeFileSync(path.join(INSTALL_FIXTURE, 'README.md'), '# install smoke\n');
 
-  const remove = run('npx', ['skills', 'remove', 'harness-bootstrap', '-y'], { cwd: INSTALL_FIXTURE });
+  const remove = run('npx', ['skills', 'remove', 'ab-harness-skill', '-y'], { cwd: INSTALL_FIXTURE });
   if (remove.status !== 0 && !/not found|no skills/i.test(remove.out)) {
     console.warn('WARN: skills remove returned non-zero (may be first install)');
   }
@@ -101,14 +136,14 @@ function installSmoke() {
 
   const add = run(
     'npx',
-    ['skills', 'add', repoFromInstall, '--skill', 'harness-bootstrap', '-a', 'cursor', '--copy', '-y'],
+    ['skills', 'add', repoFromInstall, '--skill', 'ab-harness-skill', '-a', 'cursor', '--copy', '-y'],
     { cwd: INSTALL_FIXTURE },
   );
   if (add.status !== 0) fail(`npx skills add failed:\n${add.out}`);
 
   const candidates = [
-    path.join(INSTALL_FIXTURE, '.cursor', 'skills', 'harness-bootstrap'),
-    path.join(INSTALL_FIXTURE, '.agents', 'skills', 'harness-bootstrap'),
+    path.join(INSTALL_FIXTURE, '.cursor', 'skills', 'ab-harness-skill'),
+    path.join(INSTALL_FIXTURE, '.agents', 'skills', 'ab-harness-skill'),
   ];
   const installedRoot = candidates.find((dir) => fs.existsSync(path.join(dir, 'SKILL.md')));
   if (!installedRoot) fail(`expected skill in one of:\n${candidates.join('\n')}`);
@@ -122,9 +157,10 @@ function installSmoke() {
 
 const doInstall = process.argv.includes('--install');
 
-console.log('=== harness-bootstrap skills.sh package test ===\n');
+console.log('=== ab-harness-skill skills.sh package test ===\n');
 checkLayout();
 runScanSmoke();
+runInstallSmoke();
 if (doInstall) installSmoke();
 console.log('\nAll checks passed.');
 if (!doInstall) {

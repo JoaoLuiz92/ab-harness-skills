@@ -1,6 +1,6 @@
 # Sample Harness Plan
 
-Example output from harness-bootstrap Phase 4. Fictional project **Acme API**.
+Example output from ab-harness-skill Phase 4. Fictional project **Acme API**.
 
 ## Context
 

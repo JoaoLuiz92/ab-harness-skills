@@ -1,6 +1,6 @@
 # ab-harness-skills
 
-[![skills.sh](https://img.shields.io/badge/skills.sh-harness--bootstrap-blue)](https://skills.sh)
+[![skills.sh](https://img.shields.io/badge/skills.sh-ab--harness--skill-blue)](https://skills.sh)
 
 Portable **agent development harness** for any codebase — spec-driven delivery, isolated validation lanes, merge gates, and optional integrations (Jira, GitHub, Confluence).
 
@@ -9,10 +9,10 @@ Supports **Cursor**, **Claude Code**, and **OpenAI Codex**. Stack-agnostic.
 ## Install
 
 ```bash
-npx skills add JoaoLuiz92/ab-harness-skills --skill harness-bootstrap -a cursor -g --copy -y
+npx skills add JoaoLuiz92/ab-harness-skills --skill ab-harness-skill -a cursor -g --copy -y
 ```
 
-In Agent chat: `/harness-bootstrap` or ask to *bootstrap workflow on this repo*.
+In Agent chat: `/ab-harness-skill` or ask to *bootstrap workflow on this repo*.
 
 Also discoverable on [skills.sh](https://skills.sh).
 
@@ -24,14 +24,14 @@ Six-phase bootstrap on a **target repository**:
 2. **Interview** — tools, integrations, branches
 3. **Gap analysis** — maturity scoring
 4. **Plan** — phased rollout (approval required before install)
-5. **Install** — templates → `workflow.config.md`, `docs/workflow/`, adapters
+5. **Install** — templates → `workflow.config.md`, `.specs/`, `docs/workflow/`, adapters
 6. **Pilot** — first delivery through validation lane
 
 ## Repository layout
 
 ```
 ab-harness-skills/
-├── skills/harness-bootstrap/   # Publishable skill (skills.sh)
+├── skills/ab-harness-skill/   # Publishable skill (skills.sh)
 │   ├── SKILL.md
 │   ├── references/
 │   ├── templates/

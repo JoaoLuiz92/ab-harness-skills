@@ -9,8 +9,8 @@
     "url": "https://github.com/JoaoLuiz92/ab-harness-skills.git"
   },
   "scripts": {
-    "scan": "node skills/harness-bootstrap/scripts/scan-profile.mjs",
-    "install:harness": "node skills/harness-bootstrap/scripts/install-harness.mjs",
+    "scan": "node skills/ab-harness-skill/scripts/scan-profile.mjs",
+    "install:harness": "node skills/ab-harness-skill/scripts/install-harness.mjs",
     "test:skill-package": "node scripts/test-skill-package.mjs",
     "test:skill-install": "node scripts/test-skill-package.mjs --install"
   },
