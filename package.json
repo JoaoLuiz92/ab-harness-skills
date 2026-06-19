@@ -1,0 +1,20 @@
+{
+  "name": "ab-harness-skills",
+  "version": "1.0.0",
+  "description": "Portable agent development harness bootstrap skill for skills.sh",
+  "type": "module",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JoaoLuiz92/ab-harness-skills.git"
+  },
+  "scripts": {
+    "scan": "node skills/harness-bootstrap/scripts/scan-profile.mjs",
+    "install:harness": "node skills/harness-bootstrap/scripts/install-harness.mjs",
+    "test:skill-package": "node scripts/test-skill-package.mjs",
+    "test:skill-install": "node scripts/test-skill-package.mjs --install"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

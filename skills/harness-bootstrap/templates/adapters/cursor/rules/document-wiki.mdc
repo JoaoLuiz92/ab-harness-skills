@@ -1,0 +1,16 @@
+---
+description: Confluence wiki updates when CONFLUENCE=ON
+alwaysApply: true
+---
+
+# Confluence documentation
+
+When `CONFLUENCE=ON` and change affects non-developers:
+
+- Publish to team wiki via MCP
+- Keep repo docs minimal (README, env example, short runbooks)
+- Never paste secrets
+
+When change is dev-only: repo `docs/` may suffice — state explicitly in delivery close comment.
+
+Checklist triggers: API, routes, migrations, env, deploy, integrations.

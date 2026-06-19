@@ -1,0 +1,19 @@
+---
+description: Validation lane — isolated runners before merge
+alwaysApply: true
+---
+
+# Validation lane
+
+When closing a delivery with code changes:
+
+1. `npm run validation-lane:handoff -- --name <slug> --pattern <p> --area <path>`
+2. Dispatch **5 parallel** Task subagents (`subagent_type: shell`, `readonly: true`) for roles:
+   `lint-build`, `unit`, `integration`, `e2e`, `uat`
+3. Each runs only: `npm run validation-lane:runner -- --runner <role> --name <slug> --pattern <p>`
+4. `npm run validation-lane:merge -- --name <slug>`
+5. Attach `docs/workflow/reports/<date>-<slug>.md` to PR / tracker
+
+**Prohibited:** coordinator running all 5 runners in own shell without Task isolation.
+
+Fast loop (`npm test -- <p>`) allowed during dev; does not replace lane.

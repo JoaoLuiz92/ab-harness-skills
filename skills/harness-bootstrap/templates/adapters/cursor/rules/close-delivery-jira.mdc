@@ -1,0 +1,19 @@
+---
+description: Close delivery via Jira MCP when JIRA_TASKS=ON
+alwaysApply: true
+---
+
+# Close delivery — Jira
+
+When `JIRA_TASKS=ON` and card KEY is known:
+
+1. Verify validation lane report APROVADO
+2. Comment on card:
+   - Summary (plain language)
+   - Technical: files, contracts changed
+   - Verification: commands + lane report path
+   - Documentation: updated or N/A
+3. Transition to PR Review when workflow allows
+4. If MCP unavailable: note MCP_PENDING; update next_actions.md; inform user
+
+Link report: `docs/workflow/reports/<date>-<slug>.md`

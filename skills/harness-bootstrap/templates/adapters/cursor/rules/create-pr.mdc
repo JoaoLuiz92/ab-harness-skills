@@ -1,0 +1,17 @@
+---
+description: Create GitHub PR when GITHUB_PULL_REQUESTS=ON
+alwaysApply: true
+---
+
+# Pull requests
+
+When `GITHUB_PULL_REQUESTS=ON` and delivery is ready:
+
+1. Validation lane report must be APROVADO
+2. `gh pr create` with body:
+   - Summary
+   - Test plan
+   - Link to lane report
+3. Wait for required CI checks
+
+Do not merge with red required checks unless human explicitly approves exception.

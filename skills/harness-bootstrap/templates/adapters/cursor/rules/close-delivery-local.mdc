@@ -1,0 +1,15 @@
+---
+description: Close delivery locally when JIRA_TASKS=OFF
+alwaysApply: true
+---
+
+# Close delivery — local
+
+When `JIRA_TASKS=OFF`:
+
+1. Verify validation lane report APROVADO
+2. Update `docs/workflow/next_actions.md` — mark item done
+3. Update `docs/workflow/features/<slug>/tasks.md` if exists
+4. Complete `docs/workflow/merge-checklist.md` if not using GitHub PRs
+
+Delivery ID = handoff `name` slug.

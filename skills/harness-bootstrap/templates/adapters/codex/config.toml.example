@@ -1,0 +1,15 @@
+# Codex MCP example — copy to ~/.codex/config.toml or project .codex/config.toml
+# Enable only servers matching workflow.config.md flags
+# Never commit real tokens
+
+# [mcp_servers.github]
+# enabled = true
+# command = "npx"
+# args = ["-y", "@modelcontextprotocol/server-github"]
+# env_vars = ["GITHUB_PERSONAL_ACCESS_TOKEN"]
+
+# [mcp_servers.atlassian]
+# enabled = true
+# Configure per your Atlassian MCP package documentation
+
+# Verify: codex mcp list

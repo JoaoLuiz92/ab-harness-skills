@@ -1,0 +1,14 @@
+node_modules/
+.DS_Store
+*.log
+.tmp-*
+.tmp-harness-*
+
+# Local integration sandbox (not published)
+examples/
+
+# Ephemeral install-test output
+tests/.tmp-install/
+
+.agents/
+skills-lock.json
