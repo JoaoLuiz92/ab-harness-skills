@@ -5,14 +5,18 @@ alwaysApply: true
 
 # Validation lane
 
+Canonical docs: `.specs/testing/SUBAGENTS-FLOW.md` · `.specs/testing/CONTEXT-BOUNDARIES.md`
+
 When closing a delivery with code changes:
 
-1. `npm run validation-lane:handoff -- --name <slug> --pattern <p> --area <path>`
-2. Dispatch **5 parallel** Task subagents (`subagent_type: shell`, `readonly: true`) for roles:
+1. `npm run validation-lane:handoff -- --name <slug> --pattern <p> --area <path>` — **coordinator S1**
+2. Dispatch **5 parallel** Task subagents (`subagent_type: shell`, `readonly: true`, **model S0** / `composer-2.5-fast`) for roles:
    `lint-build`, `unit`, `integration`, `e2e`, `uat`
 3. Each runs only: `npm run validation-lane:runner -- --runner <role> --name <slug> --pattern <p>`
-4. `npm run validation-lane:merge -- --name <slug>`
-5. Attach `docs/workflow/reports/<date>-<slug>.md` to PR / tracker
+4. `npm run validation-lane:merge -- --name <slug>` — **coordinator S1**
+5. Attach `.specs/testing/reports/<date>-<slug>.md` to PR / tracker
+
+**Model routing:** runners = S0; coordinator handoff/merge = S1. See `.specs/testing/MODEL-ROUTING.md`.
 
 **Prohibited:** coordinator running all 5 runners in own shell without Task isolation.
 

@@ -76,9 +76,51 @@ function main() {
 
   // Sync session-start pointers that drift from skill templates
   copyIfExists(
+    path.join(SKILL_ROOT, 'templates', 'adapters', 'cursor', 'rules', 'validation-lane.mdc'),
+    path.join(target, '.cursor', 'rules', 'validation-lane.mdc'),
+  );
+  copyIfExists(
+    path.join(SKILL_ROOT, 'templates', 'adapters', 'cursor', 'rules', 'model-routing.mdc'),
+    path.join(target, '.cursor', 'rules', 'model-routing.mdc'),
+  );
+  copyIfExists(
     path.join(SKILL_ROOT, 'templates', 'adapters', 'cursor', 'rules', 'workflow-core.mdc'),
     path.join(target, '.cursor', 'rules', 'workflow-core.mdc'),
   );
+
+  const workflowConfigPath = path.join(target, 'workflow.config.md');
+  if (fs.existsSync(workflowConfigPath)) {
+    let cfg = fs.readFileSync(workflowConfigPath, 'utf8');
+    cfg = cfg.replace(/^REPORTS_DIR=.*$/m, 'REPORTS_DIR=.specs/testing/reports');
+    cfg = cfg.replace(/^HANDOFF_DIR=.*$/m, 'HANDOFF_DIR=.specs/testing/handoff');
+    if (!/^LANE_COMMANDS=/m.test(cfg)) {
+      cfg = cfg.replace(/^SPECS_DIR=\.specs$/m, 'SPECS_DIR=.specs\nLANE_COMMANDS=docs/workflow/lane-commands.json');
+    }
+    fs.writeFileSync(workflowConfigPath, cfg, 'utf8');
+    console.log(`Patched ${path.relative(REPO_ROOT, workflowConfigPath)} (v1.4 testing paths)`);
+  }
+
+  const laneScriptTpl = path.join(SKILL_ROOT, 'templates', 'scripts', 'validation-lane.mjs.tpl');
+  if (fs.existsSync(laneScriptTpl)) {
+    copyIfExists(laneScriptTpl, path.join(target, 'scripts', 'validation-lane.mjs'));
+  }
+
+  const configPath = path.join(target, 'docs', 'workflow', 'bootstrap', 'install-config.json');
+  if (fs.existsSync(configPath)) {
+    runNode(path.join(SKILL_ROOT, 'scripts', 'generate-specs.mjs'), [
+      '--target',
+      target,
+      '--config',
+      configPath,
+    ]);
+  } else if (fs.existsSync(path.join(SKILL_ROOT, 'scripts', 'install-config.example.json'))) {
+    runNode(path.join(SKILL_ROOT, 'scripts', 'generate-specs.mjs'), [
+      '--target',
+      target,
+      '--config',
+      path.join(SKILL_ROOT, 'scripts', 'install-config.example.json'),
+    ]);
+  }
 
   const readmeTpl = path.join(SKILL_ROOT, 'templates', 'docs', 'workflow', 'README.md.tpl');
   if (fs.existsSync(readmeTpl)) {

@@ -2,18 +2,20 @@
 /**
  * validation-lane.mjs — Generic validation harness (handoff → runners → merge).
  * Config: docs/workflow/lane-commands.json
+ * Paths: workflow.config.md (HANDOFF_DIR, REPORTS_DIR, LANE_COMMANDS)
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 
 const ROOT = process.cwd();
-const LANE_COMMANDS = path.join(ROOT, 'docs/workflow/lane-commands.json');
-const HANDOFF_DIR = path.join(ROOT, 'docs/workflow/handoff');
-const REPORTS_DIR = path.join(ROOT, 'docs/workflow/reports');
-
 const ROLES = ['lint-build', 'unit', 'integration', 'e2e', 'uat'];
+
+const DEFAULTS = {
+  HANDOFF_DIR: '.specs/testing/handoff',
+  REPORTS_DIR: '.specs/testing/reports',
+  LANE_COMMANDS: 'docs/workflow/lane-commands.json',
+};
 
 function parseArgs(argv) {
   const args = {
@@ -38,17 +40,43 @@ function parseArgs(argv) {
   return args;
 }
 
+function loadWorkflowConfig() {
+  const cfg = { ...DEFAULTS };
+  const configPath = path.join(ROOT, 'workflow.config.md');
+  if (!fs.existsSync(configPath)) return cfg;
+  for (const line of fs.readFileSync(configPath, 'utf8').split('\n')) {
+    const m = line.match(/^([A-Z_]+)=(.+)$/);
+    if (m && m[1] in cfg) cfg[m[1]] = m[2].trim();
+  }
+  return cfg;
+}
+
+function resolvePath(rel) {
+  return path.isAbsolute(rel) ? rel : path.join(ROOT, rel);
+}
+
+function lanePaths() {
+  const cfg = loadWorkflowConfig();
+  return {
+    laneCommands: resolvePath(cfg.LANE_COMMANDS),
+    handoffDir: resolvePath(cfg.HANDOFF_DIR),
+    reportsDir: resolvePath(cfg.REPORTS_DIR),
+  };
+}
+
 function loadCommands() {
-  if (!fs.existsSync(LANE_COMMANDS)) {
-    console.error(`Missing ${LANE_COMMANDS}. Run ab-harness-skill install.`);
+  const { laneCommands } = lanePaths();
+  if (!fs.existsSync(laneCommands)) {
+    console.error(`Missing ${laneCommands}. Run ab-harness-skill install.`);
     process.exit(1);
   }
-  return JSON.parse(fs.readFileSync(LANE_COMMANDS, 'utf8'));
+  return JSON.parse(fs.readFileSync(laneCommands, 'utf8'));
 }
 
 function ensureDirs() {
-  fs.mkdirSync(HANDOFF_DIR, { recursive: true });
-  fs.mkdirSync(REPORTS_DIR, { recursive: true });
+  const { handoffDir, reportsDir } = lanePaths();
+  fs.mkdirSync(handoffDir, { recursive: true });
+  fs.mkdirSync(reportsDir, { recursive: true });
 }
 
 function runShell(cmd, label) {
@@ -111,6 +139,7 @@ function writeHandoff(args) {
     console.error('--name required for handoff');
     process.exit(1);
   }
+  const { handoffDir } = lanePaths();
   const handoff = {
     name: args.name,
     tracker: args.tracker || null,
@@ -120,12 +149,13 @@ function writeHandoff(args) {
     createdAt: new Date().toISOString(),
     uatMode: 'smart',
   };
-  const file = path.join(HANDOFF_DIR, `${args.name}.json`);
+  const file = path.join(handoffDir, `${args.name}.json`);
   fs.writeFileSync(file, JSON.stringify(handoff, null, 2), 'utf8');
   console.log(`Handoff: ${file}`);
 }
 
 function runnerResult(args, role, result) {
+  const { reportsDir } = lanePaths();
   const status = result.skipped ? 'SKIP' : result.exitCode === 0 ? 'PASS' : 'FAIL';
   const payload = {
     role,
@@ -136,7 +166,7 @@ function runnerResult(args, role, result) {
     summary: result.summary,
     timestamp: new Date().toISOString(),
   };
-  const tmp = path.join(REPORTS_DIR, `.tmp-${args.name}-${role}.json`);
+  const tmp = path.join(reportsDir, `.tmp-${args.name}-${role}.json`);
   fs.writeFileSync(tmp, JSON.stringify(payload, null, 2), 'utf8');
   console.log(`${status}: ${tmp}`);
   return result.exitCode === 0 || result.skipped ? 0 : 1;
@@ -187,11 +217,13 @@ function mergeReports(args) {
     console.error('--name required for merge');
     process.exit(1);
   }
+  const { handoffDir, reportsDir } = lanePaths();
+  const cfg = loadWorkflowConfig();
   const date = new Date().toISOString().slice(0, 10);
   const rows = [];
   let blockingFail = false;
   for (const role of ROLES) {
-    const tmp = path.join(REPORTS_DIR, `.tmp-${args.name}-${role}.json`);
+    const tmp = path.join(reportsDir, `.tmp-${args.name}-${role}.json`);
     if (!fs.existsSync(tmp)) {
       rows.push({ role, status: 'MISSING', summary: 'runner did not run' });
       blockingFail = true;
@@ -202,6 +234,7 @@ function mergeReports(args) {
     if (data.status === 'FAIL') blockingFail = true;
   }
   const trackerLine = args.tracker ? `\n- **Tracker**: ${args.tracker}` : '';
+  const handoffRel = path.join(cfg.HANDOFF_DIR, `${args.name}.json`).replace(/\\/g, '/');
   const md = [
     `# Validation Lane Report — ${args.name} — ${date}`,
     '',
@@ -216,9 +249,9 @@ function mergeReports(args) {
     '',
     `## Overall: ${blockingFail ? 'REPROVADO' : 'APROVADO'}`,
     '',
-    `Handoff: docs/workflow/handoff/${args.name}.json`,
+    `Handoff: ${handoffRel}`,
   ].join('\n');
-  const out = path.join(REPORTS_DIR, `${date}-${args.name}.md`);
+  const out = path.join(reportsDir, `${date}-${args.name}.md`);
   fs.writeFileSync(out, md, 'utf8');
   console.log(`Report: ${out}`);
   process.exit(blockingFail ? 1 : 0);
@@ -235,7 +268,9 @@ function main() {
   --runner <role> --name <slug> [--pattern P]
   --merge --name <slug> [--tracker KEY]
 
-Roles: ${ROLES.join(', ')}`);
+Roles: ${ROLES.join(', ')}
+
+Paths from workflow.config.md: HANDOFF_DIR, REPORTS_DIR, LANE_COMMANDS`);
     process.exit(1);
   }
 }

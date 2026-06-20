@@ -1,6 +1,6 @@
 # Project context
 
-> Generated at bootstrap. Update when goals, branches, or integrations change.
+> **Compat:** bootstrap interview snapshot. Stable identity lives in [PROJECT.md](PROJECT.md). Update when goals, branches, or integrations change.
 
 ## Identity
 

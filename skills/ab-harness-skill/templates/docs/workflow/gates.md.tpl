@@ -1,5 +1,7 @@
 # Merge Gates (local reference)
 
+> **Canonical:** [.specs/testing/GATE-CHECKS.md](../../.specs/testing/GATE-CHECKS.md)
+
 ## Gate 1 — Feature → {{INTEGRATION_BRANCH}}
 
 - Lint / build / unit / integration green

@@ -30,8 +30,9 @@ Modes: `subagents` | `multi-session` | `script-only`
 TASKS_FALLBACK={{TASKS_FALLBACK}}
 DOCS_FALLBACK={{DOCS_FALLBACK}}
 SPECS_DIR=.specs
-REPORTS_DIR=docs/workflow/reports
-HANDOFF_DIR=docs/workflow/handoff
+LANE_COMMANDS=docs/workflow/lane-commands.json
+HANDOFF_DIR=.specs/testing/handoff
+REPORTS_DIR=.specs/testing/reports
 
 ## Tracker (when JIRA_TASKS=ON)
 

@@ -42,7 +42,7 @@ Commands come from `docs/workflow/lane-commands.json` — discovered at bootstra
 
 ## Runner output contract
 
-Each runner writes: `docs/workflow/reports/.tmp-<slug>-<role>.json`
+Each runner writes: `.specs/testing/reports/.tmp-<slug>-<role>.json` (paths from `workflow.config.md` → `REPORTS_DIR`).
 
 ```json
 {
@@ -57,7 +57,7 @@ Each runner writes: `docs/workflow/reports/.tmp-<slug>-<role>.json`
 
 ## Merge report
 
-`docs/workflow/reports/<date>-<slug>.md` must state:
+`.specs/testing/reports/<date>-<slug>.md` must state:
 
 > Consolidated by validation-lane merge from N runner evidence files.
 

@@ -50,7 +50,7 @@ npm run validation-lane:merge -- --name <slug>
 
 | Config | Action |
 |--------|--------|
-| JIRA_TASKS=ON | Comment on card; link `docs/workflow/reports/<date>-<slug>.md` |
+| JIRA_TASKS=ON | Comment on card; link `.specs/testing/reports/<date>-<slug>.md` |
 | GITHUB_PULL_REQUESTS=ON | Open PR with report link |
 | CONFLUENCE=ON | Update wiki if team-facing |
 | All OFF | Complete merge-checklist.md |

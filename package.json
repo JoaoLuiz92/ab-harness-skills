@@ -1,6 +1,6 @@
 {
   "name": "ab-harness-skills",
-  "version": "1.0.0",
+  "version": "1.4.1",
   "description": "Portable agent development harness bootstrap skill for skills.sh",
   "type": "module",
   "private": true,

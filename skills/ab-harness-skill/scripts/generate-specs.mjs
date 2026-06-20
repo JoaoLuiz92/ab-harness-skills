@@ -77,39 +77,70 @@ function formatLaneCommands(profile) {
   return lines.join('\n');
 }
 
-function buildTestingStrategy(profile, vars) {
-  return [
-    '# Testing strategy',
-    '',
-    `> Generated for **${vars.PROJECT_NAME || 'project'}**. Formal validation lane: [docs/workflow/test-lane.md](../../docs/workflow/test-lane.md).`,
-    '',
-    '## Frameworks detected',
-    '',
-    profile.testFrameworks.length
+function enrichInstallVars(vars) {
+  const confluenceOn = vars.CONFLUENCE === 'ON';
+  return {
+    ...vars,
+    PROJECT_ONE_LINER:
+      vars.PROJECT_ONE_LINER || '_Unknown — describe mission in PROJECT.md after bootstrap._',
+    CONFLUENCE_DEPLOY_NOTE: confluenceOn
+      ? '- [ ] Confluence / team wiki updated if change impacts whole team'
+      : '',
+    CONFLUENCE_DELIVERY_SECTION: confluenceOn
+      ? '| Field | Value |\n|-------|-------|\n| **Mode** | section / page |\n| **URL** | _pending_ |\n| **Published** | _pending_ |'
+      : '_Confluence OFF — skip section 6 or mark N/A._',
+    TRACKER_ID_OR_SLUG: vars.TRACKER_ID_OR_SLUG || '<slug>',
+    DELIVERY_DATE: vars.DELIVERY_DATE || vars.BOOTSTRAP_DATE || new Date().toISOString().slice(0, 10),
+  };
+}
+
+function buildTestingVars(profile, vars) {
+  return {
+    ...vars,
+    TEST_FRAMEWORKS_LIST: profile.testFrameworks.length
       ? profile.testFrameworks.map((f) => `- ${f}`).join('\n')
       : '_None — add conventions when tests are introduced._',
-    '',
-    '## Fast loop (during development)',
-    '',
-    vars.TEST_CMD ? `- Default: \`${vars.TEST_CMD}\`` : '- Set project test command in AGENTS.md',
-    '',
-    '## Validation lane (before merge)',
-    '',
-    '- Config: `docs/workflow/lane-commands.json`',
-    '- Handoff: `npm run validation-lane:handoff -- --name <slug> ...`',
-    '- Merge report: `docs/workflow/reports/<date>-<slug>.md`',
-    '',
-    '## Codebase test map',
-    '',
-    '- [codebase/TESTING.md](codebase/TESTING.md) — inventory and CI',
-    '- [codebase/DISCOVERY.md](codebase/DISCOVERY.md) — discovery index',
-    '',
-    formatLaneCommands(profile),
-    '',
-    '## Traceability',
-    '',
-    'Each acceptance criterion in `.specs/features/` or `.specs/quick/` should map to at least one test or gate check before merge.',
-  ].join('\n');
+    FAST_LOOP_LINE: vars.TEST_CMD
+      ? `- Default: \`${vars.TEST_CMD}\``
+      : '- Set project test command in AGENTS.md',
+    LANE_COMMANDS_SECTION: formatLaneCommands(profile),
+  };
+}
+
+function ensureEmptyDir(dirPath) {
+  fs.mkdirSync(dirPath, { recursive: true });
+  const keep = path.join(dirPath, '.gitkeep');
+  if (!fs.existsSync(keep)) {
+    fs.writeFileSync(keep, '', 'utf8');
+  }
+}
+
+function writeTestingTree(specsRoot, profile, installVars) {
+  const testingVars = buildTestingVars(profile, installVars);
+  const tplFiles = [
+    ['GATE-CHECKS.md.tpl', 'GATE-CHECKS.md'],
+    ['SUBAGENTS.md.tpl', 'SUBAGENTS.md'],
+    ['SUBAGENTS-FLOW.md.tpl', 'SUBAGENTS-FLOW.md'],
+    ['TEST-LANE-CLI.md.tpl', 'TEST-LANE-CLI.md'],
+    ['CONTEXT-BOUNDARIES.md.tpl', 'CONTEXT-BOUNDARIES.md'],
+    ['MODEL-ROUTING.md.tpl', 'MODEL-ROUTING.md'],
+    ['STRATEGY.md.tpl', 'STRATEGY.md'],
+    ['reports/TEMPLATE.md.tpl', 'reports/TEMPLATE.md'],
+  ];
+  for (const [tpl, dest] of tplFiles) {
+    writeFromTpl(`testing/${tpl}`, path.join(specsRoot, 'testing', dest), testingVars);
+  }
+
+  for (const role of ['lint-build', 'unit', 'integration', 'e2e', 'uat']) {
+    writeFromTpl(
+      `testing/runners/${role}.md.tpl`,
+      path.join(specsRoot, 'testing', 'runners', `${role}.md`),
+      testingVars,
+    );
+  }
+
+  ensureEmptyDir(path.join(specsRoot, 'testing', 'handoff'));
+  ensureEmptyDir(path.join(specsRoot, 'testing', 'reports'));
 }
 
 function resolveCodebaseMap(target, profile, vars, options = {}) {
@@ -144,19 +175,27 @@ function resolveCodebaseMap(target, profile, vars, options = {}) {
 export function generateSpecs(target, vars = {}, options = {}) {
   const profile = buildProfile(target);
   const specsRoot = path.join(target, '.specs');
+  const installVars = enrichInstallVars(vars);
 
-  resolveCodebaseMap(target, profile, vars, options);
-  writeFile(path.join(specsRoot, 'testing', 'strategy.md'), buildTestingStrategy(profile, vars));
+  resolveCodebaseMap(target, profile, installVars, options);
+  writeTestingTree(specsRoot, profile, installVars);
 
   const tplFiles = [
     ['README.md.tpl', 'README.md'],
+    ['project/PROJECT.md.tpl', 'project/PROJECT.md'],
+    ['project/STATE.md.tpl', 'project/STATE.md'],
+    ['project/ROADMAP.md.tpl', 'project/ROADMAP.md'],
+    ['project/DEPLOY-PLAN.md.tpl', 'project/DEPLOY-PLAN.md'],
     ['project/context.md.tpl', 'project/context.md'],
     ['features/README.md.tpl', 'features/README.md'],
+    ['features/delivery.md.tpl', 'features/delivery.md.tpl'],
     ['quick/README.md.tpl', 'quick/README.md'],
+    ['quick/CURRENT-FOCUS.md.tpl', 'quick/CURRENT-FOCUS.md'],
+    ['quick/NEXT-ACTIONS.md.tpl', 'quick/NEXT-ACTIONS.md'],
     ['quick/_template.md.tpl', 'quick/_template.md'],
   ];
   for (const [tpl, dest] of tplFiles) {
-    writeFromTpl(tpl, path.join(specsRoot, dest), vars);
+    writeFromTpl(tpl, path.join(specsRoot, dest), installVars);
   }
 
   return { profile, specsRoot };

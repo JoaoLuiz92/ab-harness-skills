@@ -6,10 +6,11 @@ alwaysApply: true
 # Workflow core
 
 1. Read `workflow.config.md` at repo root.
-2. Skim `.specs/codebase/DISCOVERY.md` and `.specs/project/context.md`.
-3. Read `docs/workflow/next_actions.md` when `JIRA_TASKS=OFF`.
-4. Follow `docs/workflow/test-lane.md` when closing code deliveries.
+2. Read `.specs/quick/CURRENT-FOCUS.md` first.
+3. Skim `.specs/codebase/DISCOVERY.md` and `.specs/project/PROJECT.md`.
+4. Read `.specs/quick/NEXT-ACTIONS.md` (canonical) or `docs/workflow/next_actions.md` when `JIRA_TASKS=OFF`.
+5. Follow `.specs/testing/SUBAGENTS-FLOW.md` when closing code deliveries.
 
-Implementer does not run formal validation lane as self-gate. Use isolated runners per `VALIDATION_CURSOR` in config.
+Implementer does not run formal validation lane as self-gate. Use isolated S0 runners per `VALIDATION_CURSOR` in config.
 
-Methodology: SDD adaptive + merge gates in `docs/workflow/gates.md`.
+Methodology: SDD adaptive + merge gates in `.specs/testing/GATE-CHECKS.md`.
