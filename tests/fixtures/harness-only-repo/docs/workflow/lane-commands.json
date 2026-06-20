@@ -1,0 +1,4 @@
+{
+  "lint-build": { "root": "npm run test" },
+  "unit": { "root": "npm test" }
+}

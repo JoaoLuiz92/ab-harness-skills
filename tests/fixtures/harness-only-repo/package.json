@@ -1,0 +1,12 @@
+{
+  "name": "harness-only-fixture",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "node -e \"process.exit(0)\"",
+    "validation-lane:handoff": "node scripts/validation-lane.mjs --write-handoff",
+    "validation-lane:runner": "node scripts/validation-lane.mjs",
+    "validation-lane:merge": "node scripts/validation-lane.mjs --merge",
+    "specs:refresh": "node scripts/generate-specs.mjs --target ."
+  }
+}

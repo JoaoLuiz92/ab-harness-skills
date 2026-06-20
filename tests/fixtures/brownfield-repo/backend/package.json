@@ -1,0 +1,19 @@
+{
+  "name": "brownfield-backend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node src/main.js",
+    "test": "node -e \"process.exit(0)\"",
+    "lint": "node -e \"process.exit(0)\"",
+    "build": "node -e \"process.exit(0)\""
+  },
+  "dependencies": {
+    "@nestjs/core": "^10.0.0",
+    "@nestjs/common": "^10.0.0",
+    "pg": "^8.11.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}

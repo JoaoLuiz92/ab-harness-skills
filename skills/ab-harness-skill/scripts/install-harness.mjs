@@ -99,12 +99,23 @@ function main() {
     vars,
   );
 
-  for (const script of ['scan-profile.mjs', 'generate-specs.mjs']) {
+  for (const script of ['scan-profile.mjs', 'generate-specs.mjs', 'map-codebase.mjs']) {
     const src = path.join(SKILL_ROOT, 'scripts', script);
     const dest = path.join(target, 'scripts', script);
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     fs.copyFileSync(src, dest);
     console.log(`Wrote ${dest}`);
+  }
+
+  const extractorsSrc = path.join(SKILL_ROOT, 'scripts', 'extractors');
+  const extractorsDest = path.join(target, 'scripts', 'extractors');
+  if (fs.existsSync(extractorsSrc)) {
+    fs.mkdirSync(extractorsDest, { recursive: true });
+    for (const f of fs.readdirSync(extractorsSrc)) {
+      if (!f.endsWith('.mjs')) continue;
+      fs.copyFileSync(path.join(extractorsSrc, f), path.join(extractorsDest, f));
+      console.log(`Wrote ${path.join(extractorsDest, f)}`);
+    }
   }
 
   mergePackageScripts(target, path.join(TPL, 'package.json.scripts.fragment'), vars);

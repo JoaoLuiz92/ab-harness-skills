@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires Node.js 18+ and git. Optional gh CLI and Atlassian MCP for integrations.
 metadata:
   author: JoaoLuiz92
-  version: "1.1.0"
+  version: "1.2.0"
 ---
 
 # AB Harness Skill
@@ -65,33 +65,50 @@ Before Phase 1, read [references/methodology/sdd.md](references/methodology/sdd.
 
 | File | Phase |
 |------|-------|
-| `docs/workflow/bootstrap/profile.md` | 1 |
+| `docs/workflow/bootstrap/profile.md` (+ `profile.json`) | 1a |
+| `docs/workflow/bootstrap/codebase/*.md` (8 files) | 1a + 1b |
 | `docs/workflow/bootstrap/context.md` | 2 |
 | `docs/workflow/bootstrap/gap-report.md` | 3 |
 | `docs/workflow/bootstrap/harness-plan.md` | 4 |
 | `docs/workflow/bootstrap/tasks.md` | 4 |
 
-In `plan` mode, write the same content to `.tmp-harness-profile.md`, `.tmp-harness-context.md`, etc. at repo root instead.
+In `plan` mode, write the same content to `.tmp-harness-*.md` at repo root instead (codebase map → `.tmp-harness-codebase/`).
 
-**Gate:** if any Part A file is missing, complete that phase — do not show Q5 or start Part B.
+**Gate:** if any Part A file is missing, complete that phase — do not show Q5 or start Part B. Codebase gate: all 8 files in `docs/workflow/bootstrap/codebase/` and `DISCOVERY.md` shows gate **passed** (≥80% of **applicable** checklist items, or harness-only repo with harness sections populated).
 
-### Phase 1: Scan (read-only)
+### Phase 1a: Scan (read-only, automatic)
 
-Run the bundled scanner against the **target repo**:
+Run the bundled scanner and codebase mapper against the **target repo**:
 
 ```bash
+node "$SKILL_ROOT/scripts/scan-profile.mjs" --cwd <target-repo> --json --out docs/workflow/bootstrap/profile.json
 node "$SKILL_ROOT/scripts/scan-profile.mjs" --cwd <target-repo> --out docs/workflow/bootstrap/profile.md
+node "$SKILL_ROOT/scripts/map-codebase.mjs" --cwd <target-repo> --profile docs/workflow/bootstrap/profile.json \
+  --out docs/workflow/bootstrap/codebase/
 ```
 
-In `plan` mode when `docs/` must not exist yet: `--out .tmp-harness-profile.md`.
+In `plan` mode when `docs/` must not exist yet: write profile to `.tmp-harness-profile.md` / `.tmp-harness-profile.json` and codebase to `.tmp-harness-codebase/`.
 
 Also read target README, package manifests, CI workflows, and any `AGENTS.md` / `CLAUDE.md`.
 
-Apply checklist: [references/discovery-checklist.md](references/discovery-checklist.md)
+**Validation:** `profile.md` exists; 8 scaffolded docs exist under `bootstrap/codebase/`.
 
-**Validation:** profile file exists and lists stack, test commands, and branch hints.
+**On failure:** fix Node path or `--cwd`; re-run scan. Do not proceed without profile + scaffolds.
 
-**On failure:** fix Node path or `--cwd`; re-run scan. Do not proceed without a profile.
+### Phase 1b: Brownfield enrichment (recommended)
+
+The scan (1a) already produces **deep, code-derived** content in all 8 docs. Phase 1b is for **gaps the scanner cannot infer** — team conventions, prod hosting, critical business flows, secret scope.
+
+Follow [references/codebase-mapping-protocol.md](references/codebase-mapping-protocol.md) and [references/discovery-checklist.md](references/discovery-checklist.md).
+
+- Read README, CI, and any modules the scan flagged as partial
+- Fill optional `<!-- AGENT:complete -->` sections (do not invent; use `_Unknown_` if not found)
+- Add org-specific concerns to `CONCERNS.md` **without fixing code**
+- Cross-check `DISCOVERY.md` checklist; mark any items the scan missed
+
+**Validation:** 8 files exist; deep scan sections populated; agent sections filled or explicitly `_Unknown_`; `DISCOVERY.md` gate **passed** (applicable checklist ≥80%, or harness-only with validation-lane sections complete).
+
+**On failure:** complete missing reads before Phase 2.
 
 ### Phase 2: Interview
 
@@ -164,7 +181,8 @@ After templates, run `generate-specs.mjs` (also invoked by installer) to map the
 
 | Generated | Target |
 |-----------|--------|
-| scan profile data | `.specs/codebase/overview.md`, `structure.md`, `stack.md` |
+| bootstrap `codebase/` (if exists) | **copied** to `.specs/codebase/` (8 docs) |
+| else `map-codebase.mjs` fallback | `.specs/codebase/*.md` (scaffold + enrichment banner) |
 | install config | `.specs/project/context.md` |
 | templates | `.specs/README.md`, `features/`, `quick/`, `testing/strategy.md` |
 
@@ -191,7 +209,7 @@ MCP_STATUS=PENDING
 **Post-install checklist (verify before telling the user Part B is done):**
 
 - [ ] `workflow.config.md` exists
-- [ ] `.specs/codebase/overview.md` exists
+- [ ] `.specs/codebase/DISCOVERY.md` exists (8-doc map)
 - [ ] Tool adapters installed for each entry in `TOOLS`
 - [ ] Root `package.json` exists with `validation-lane:*` and `specs:refresh` scripts (create minimal root `package.json` if the repo has none — e.g. .NET-only monorepos)
 - [ ] `npm run validation-lane:handoff -- --name smoke` succeeds (or document `node scripts/validation-lane.mjs` if npm unavailable)
@@ -279,6 +297,8 @@ Solution: refuse `full`/`install` until explicit approval; offer `plan` or a min
 | [references/maturity-model.md](references/maturity-model.md) | Phase 3 scoring |
 | [references/rollout-phases.md](references/rollout-phases.md) | Phase 4 planning |
 | [references/interaction-questionnaire.md](references/interaction-questionnaire.md) | Language, interview, and approval AskQuestion flows |
+| [references/discovery-checklist.md](references/discovery-checklist.md) | Phase 1b enrichment |
+| [references/codebase-mapping-protocol.md](references/codebase-mapping-protocol.md) | Phase 1b detailed steps |
 | [references/mcp-matrix.md](references/mcp-matrix.md) | Toggling Jira/GitHub/Confluence |
 | [CREDITS.md](CREDITS.md) | TLC and contributor attribution |
 | [references/adapters/](references/adapters/) | Post-install validation execution per tool |

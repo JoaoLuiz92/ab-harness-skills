@@ -9,6 +9,12 @@ examples/
 
 # Ephemeral install-test output
 tests/.tmp-install/
+tests/fixtures/**/.tmp-*
+
+docs/sample-codebase-map/.profile.json
 
 .agents/
 skills-lock.json
+
+# Temporary roadmap tracker — delete when v1.3–v1.6 is complete
+next_action.md

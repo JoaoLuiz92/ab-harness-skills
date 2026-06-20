@@ -7,10 +7,15 @@ Agent-readable project knowledge. Generated at bootstrap; update as the codebase
 ```
 .specs/
 ├── README.md           (this file)
-├── codebase/           (mapped from repo scan)
-│   ├── overview.md
-│   ├── structure.md
-│   └── stack.md
+├── codebase/           (8-doc brownfield map)
+│   ├── DISCOVERY.md    (index + checklist)
+│   ├── STACK.md
+│   ├── ARCHITECTURE.md
+│   ├── STRUCTURE.md
+│   ├── CONVENTIONS.md
+│   ├── TESTING.md
+│   ├── INTEGRATIONS.md
+│   └── CONCERNS.md
 ├── project/            (goals, branches, integrations)
 │   └── context.md
 ├── features/           (SDD: spec, design, tasks per delivery)
@@ -24,7 +29,7 @@ Agent-readable project knowledge. Generated at bootstrap; update as the codebase
 ## Session start (with workflow harness)
 
 1. [workflow.config.md](../workflow.config.md)
-2. [codebase/overview.md](codebase/overview.md) — skim for orientation
+2. [codebase/DISCOVERY.md](codebase/DISCOVERY.md) — index; open the doc relevant to your task
 3. [project/context.md](project/context.md)
 4. [docs/workflow/next_actions.md](../docs/workflow/next_actions.md) when `JIRA_TASKS=OFF`
 
@@ -40,7 +45,7 @@ Methodology: `docs/workflow/` + harness skill `references/methodology/sdd.md`.
 ## Refresh codebase map
 
 ```bash
-node scripts/generate-specs.mjs --target .
+npm run specs:refresh
 ```
 
-Optional: pass install config JSON with `--config <path>` to refresh `.specs/project/context.md` placeholders.
+Updates `<!-- auto -->` sections only; preserves agent-written content. Optional: pass install config JSON with `node scripts/generate-specs.mjs --config <path>` to refresh `.specs/project/context.md` placeholders.

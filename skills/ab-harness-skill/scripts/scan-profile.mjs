@@ -1,11 +1,20 @@
 #!/usr/bin/env node
 /**
  * scan-profile.mjs — Read-only repository profile for ab-harness-skill.
+ *
+ * profile.schema (v1):
+ *   scannedAt, root, git, packageManagers, packages[], languages[], entryPoints[],
+ *   envVars[], envFiles[], docker{}, migrations[], ciWorkflows[], ciJobs[],
+ *   testFrameworks[], testInventory{}, externalDeps[], modules[], authHints[],
+ *   apiPatterns[], agentDocs[], integrationHints[], topLevelDirs[],
+ *   suggestedLaneCommands{}, detectedStacks[], primaryStack
+ *
  * Usage: node scan-profile.mjs [--cwd <path>] [--out <file>] [--json]
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { runExtractors } from './extractors/index.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -80,10 +89,12 @@ function scanPackageJson(root, relPath) {
   return {
     path: relPath,
     name: pkg.name,
+    version: pkg.version || null,
     scripts: Object.keys(scripts),
     testScript: scripts.test || null,
     lintScript: scripts.lint || null,
     buildScript: scripts.build || null,
+    devScript: scripts.dev || scripts.start || null,
     devDependencies: Object.keys(pkg.devDependencies || {}),
     dependencies: Object.keys(pkg.dependencies || {}),
   };
@@ -193,6 +204,7 @@ function suggestLaneCommands(packages) {
 
 function buildProfile(root) {
   const packages = findPackages(root);
+  const ciWorkflows = detectCi(root);
   const integrationHints = grepFileForPatterns(root, [
     'jira',
     'atlassian',
@@ -201,17 +213,35 @@ function buildProfile(root) {
     'pull request',
   ]);
 
+  const extracted = runExtractors(root, { packages, ciWorkflows, integrationHints });
+
   return {
     scannedAt: new Date().toISOString(),
     root,
     git: exists(path.join(root, '.git')),
     packageManagers: detectPackageManagers(root),
-    packages,
+    packages: extracted.packages || packages,
+    languages: extracted.languages,
+    entryPoints: extracted.entryPoints,
+    envVars: extracted.envVars,
+    envFiles: extracted.envFiles,
+    docker: extracted.docker,
+    migrations: extracted.migrations,
     testFrameworks: detectTestFrameworks(packages),
-    ciWorkflows: detectCi(root),
+    testInventory: extracted.testInventory,
+    ciWorkflows,
+    ciJobs: extracted.ciJobs,
+    externalDeps: extracted.externalDeps,
+    modules: extracted.modules,
+    authHints: extracted.authHints,
+    apiPatterns: extracted.apiPatterns,
+    detectedStacks: extracted.detectedStacks,
+    primaryStack: extracted.primaryStack,
+    deep: extracted.deep,
+    controllers: extracted.controllers,
     agentDocs: detectAgentDocs(root),
     integrationHints,
-    topLevelDirs: walkShallow(root, 1).filter((p) => p.endsWith('/')),
+    topLevelDirs: walkShallow(root, 2).filter((p) => p.endsWith('/')),
     suggestedLaneCommands: suggestLaneCommands(packages),
   };
 }
@@ -226,9 +256,12 @@ function profileToMarkdown(profile) {
     '## Summary',
     '',
     `- Git: ${profile.git ? 'yes' : 'no'}`,
+    `- Primary stack: ${profile.primaryStack || 'unknown'}`,
+    `- Languages: ${profile.languages?.join(', ') || 'none detected'}`,
     `- Package managers: ${profile.packageManagers.join(', ') || 'none detected'}`,
     `- Test frameworks: ${profile.testFrameworks.join(', ') || 'none detected'}`,
     `- CI workflows: ${profile.ciWorkflows.length ? profile.ciWorkflows.join(', ') : 'none'}`,
+    `- Entry points: ${profile.entryPoints?.length ? profile.entryPoints.join(', ') : 'none'}`,
     '',
     '## Packages',
     '',
@@ -237,6 +270,21 @@ function profileToMarkdown(profile) {
   for (const pkg of profile.packages) {
     lines.push(`### ${pkg.path}`);
     lines.push(`- Scripts: ${pkg.scripts.join(', ') || 'none'}`);
+    if (pkg.devScript) lines.push(`- Dev: \`${pkg.devScript}\``);
+    lines.push('');
+  }
+
+  if (profile.modules?.length) {
+    lines.push('## Modules detected', '');
+    for (const m of profile.modules.slice(0, 20)) {
+      lines.push(`- \`${m.path}\` — ${m.name} (${m.type})`);
+    }
+    lines.push('');
+  }
+
+  if (profile.envVars?.length) {
+    lines.push('## Env vars (from .env.example)', '');
+    lines.push(profile.envVars.map((k) => `- \`${k}\``).join('\n'));
     lines.push('');
   }
 
@@ -257,6 +305,9 @@ function profileToMarkdown(profile) {
   for (const d of profile.topLevelDirs.slice(0, 30)) {
     lines.push(`- ${d}`);
   }
+
+  lines.push('', '## Codebase map', '');
+  lines.push('Run `map-codebase.mjs` to generate 8 docs in `.specs/codebase/` or `docs/workflow/bootstrap/codebase/`.');
   return lines.join('\n');
 }
 
