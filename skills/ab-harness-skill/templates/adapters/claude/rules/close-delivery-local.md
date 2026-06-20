@@ -1,3 +1,12 @@
 # Close delivery — local
 
-When `JIRA_TASKS=OFF`: update `next_actions.md` and feature tasks; complete merge-checklist if no GitHub PR.
+When `JIRA_TASKS=OFF`:
+
+1. Verify validation lane report APROVADO
+2. For **medium+** features: complete `.specs/features/<slug>/delivery.md` (copy from `delivery.md.tpl`)
+3. Update `.specs/quick/NEXT-ACTIONS.md` — mark item done
+4. Update `.specs/features/<slug>/tasks.md` if exists
+5. Sync legacy `docs/workflow/next_actions.md` if still in use
+6. Complete `docs/workflow/merge-checklist.md` if not using GitHub PRs
+
+Delivery ID = handoff `name` slug.

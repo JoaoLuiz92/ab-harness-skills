@@ -1,5 +1,6 @@
 {
   "PROJECT_NAME": "My Project",
+  "PROJECT_ONE_LINER": "One-line mission — fill during bootstrap interview.",
   "TOOLS": "cursor,codex",
   "JIRA_TASKS": "OFF",
   "GITHUB_PULL_REQUESTS": "ON",

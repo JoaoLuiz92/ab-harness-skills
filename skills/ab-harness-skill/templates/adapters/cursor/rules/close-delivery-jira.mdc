@@ -8,12 +8,14 @@ alwaysApply: true
 When `JIRA_TASKS=ON` and card KEY is known:
 
 1. Verify validation lane report APROVADO
-2. Comment on card:
-   - Summary (plain language)
-   - Technical: files, contracts changed
-   - Verification: commands + lane report path
-   - Documentation: updated or N/A
-3. Transition to PR Review when workflow allows
-4. If MCP unavailable: note MCP_PENDING; update next_actions.md; inform user
+2. Complete `.specs/features/<slug>/delivery.md` (sections 1–8; use for Jira comment body)
+3. Comment on card:
+   - Summary (section 2 — plain language)
+   - Technical: section 8
+   - Verification: section 4 + lane report path
+   - Documentation: section 5
+4. Transition to PR Review when workflow allows
+5. Update `.specs/quick/NEXT-ACTIONS.md`
+6. If MCP unavailable: note MCP_PENDING; inform user
 
 Link report: `docs/workflow/reports/<date>-<slug>.md`

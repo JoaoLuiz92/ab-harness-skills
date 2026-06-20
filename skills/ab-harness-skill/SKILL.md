@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires Node.js 18+ and git. Optional gh CLI and Atlassian MCP for integrations.
 metadata:
   author: JoaoLuiz92
-  version: "1.2.0"
+  version: "1.3.0"
 ---
 
 # AB Harness Skill
@@ -183,8 +183,8 @@ After templates, run `generate-specs.mjs` (also invoked by installer) to map the
 |-----------|--------|
 | bootstrap `codebase/` (if exists) | **copied** to `.specs/codebase/` (8 docs) |
 | else `map-codebase.mjs` fallback | `.specs/codebase/*.md` (scaffold + enrichment banner) |
-| install config | `.specs/project/context.md` |
-| templates | `.specs/README.md`, `features/`, `quick/`, `testing/strategy.md` |
+| install config | `.specs/project/` (PROJECT, STATE, ROADMAP, DEPLOY-PLAN, context) |
+| templates | `.specs/README.md`, `features/` (+ `delivery.md.tpl`), `quick/` (CURRENT-FOCUS, NEXT-ACTIONS), `testing/strategy.md` |
 
 Replace `{{KEY}}` placeholders from scan + interview.
 
@@ -210,11 +210,12 @@ MCP_STATUS=PENDING
 
 - [ ] `workflow.config.md` exists
 - [ ] `.specs/codebase/DISCOVERY.md` exists (8-doc map)
+- [ ] `.specs/project/PROJECT.md` + `.specs/quick/CURRENT-FOCUS.md` exist
 - [ ] Tool adapters installed for each entry in `TOOLS`
 - [ ] Root `package.json` exists with `validation-lane:*` and `specs:refresh` scripts (create minimal root `package.json` if the repo has none — e.g. .NET-only monorepos)
 - [ ] `npm run validation-lane:handoff -- --name smoke` succeeds (or document `node scripts/validation-lane.mjs` if npm unavailable)
 
-Tell the user in plain language what was created and where to start (`AGENTS.md`, `docs/workflow/README.md`).
+Tell the user in plain language what was created and where to start (`AGENTS.md`, `.specs/quick/CURRENT-FOCUS.md`, `docs/workflow/README.md`).
 
 ### Part C — Pilot (Phase 6)
 

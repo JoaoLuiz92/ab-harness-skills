@@ -77,6 +77,23 @@ function formatLaneCommands(profile) {
   return lines.join('\n');
 }
 
+function enrichInstallVars(vars) {
+  const confluenceOn = vars.CONFLUENCE === 'ON';
+  return {
+    ...vars,
+    PROJECT_ONE_LINER:
+      vars.PROJECT_ONE_LINER || '_Unknown — describe mission in PROJECT.md after bootstrap._',
+    CONFLUENCE_DEPLOY_NOTE: confluenceOn
+      ? '- [ ] Confluence / team wiki updated if change impacts whole team'
+      : '',
+    CONFLUENCE_DELIVERY_SECTION: confluenceOn
+      ? '| Field | Value |\n|-------|-------|\n| **Mode** | section / page |\n| **URL** | _pending_ |\n| **Published** | _pending_ |'
+      : '_Confluence OFF — skip section 6 or mark N/A._',
+    TRACKER_ID_OR_SLUG: vars.TRACKER_ID_OR_SLUG || '<slug>',
+    DELIVERY_DATE: vars.DELIVERY_DATE || vars.BOOTSTRAP_DATE || new Date().toISOString().slice(0, 10),
+  };
+}
+
 function buildTestingStrategy(profile, vars) {
   return [
     '# Testing strategy',
@@ -144,19 +161,27 @@ function resolveCodebaseMap(target, profile, vars, options = {}) {
 export function generateSpecs(target, vars = {}, options = {}) {
   const profile = buildProfile(target);
   const specsRoot = path.join(target, '.specs');
+  const installVars = enrichInstallVars(vars);
 
-  resolveCodebaseMap(target, profile, vars, options);
-  writeFile(path.join(specsRoot, 'testing', 'strategy.md'), buildTestingStrategy(profile, vars));
+  resolveCodebaseMap(target, profile, installVars, options);
+  writeFile(path.join(specsRoot, 'testing', 'strategy.md'), buildTestingStrategy(profile, installVars));
 
   const tplFiles = [
     ['README.md.tpl', 'README.md'],
+    ['project/PROJECT.md.tpl', 'project/PROJECT.md'],
+    ['project/STATE.md.tpl', 'project/STATE.md'],
+    ['project/ROADMAP.md.tpl', 'project/ROADMAP.md'],
+    ['project/DEPLOY-PLAN.md.tpl', 'project/DEPLOY-PLAN.md'],
     ['project/context.md.tpl', 'project/context.md'],
     ['features/README.md.tpl', 'features/README.md'],
+    ['features/delivery.md.tpl', 'features/delivery.md.tpl'],
     ['quick/README.md.tpl', 'quick/README.md'],
+    ['quick/CURRENT-FOCUS.md.tpl', 'quick/CURRENT-FOCUS.md'],
+    ['quick/NEXT-ACTIONS.md.tpl', 'quick/NEXT-ACTIONS.md'],
     ['quick/_template.md.tpl', 'quick/_template.md'],
   ];
   for (const [tpl, dest] of tplFiles) {
-    writeFromTpl(tpl, path.join(specsRoot, dest), vars);
+    writeFromTpl(tpl, path.join(specsRoot, dest), installVars);
   }
 
   return { profile, specsRoot };

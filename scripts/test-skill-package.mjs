@@ -42,6 +42,13 @@ const REQUIRED = [
   'references/methodology/sdd.md',
   'references/codebase-mapping-protocol.md',
   'templates/workflow.config.md.tpl',
+  'templates/.specs/project/PROJECT.md.tpl',
+  'templates/.specs/project/STATE.md.tpl',
+  'templates/.specs/project/ROADMAP.md.tpl',
+  'templates/.specs/project/DEPLOY-PLAN.md.tpl',
+  'templates/.specs/quick/CURRENT-FOCUS.md.tpl',
+  'templates/.specs/quick/NEXT-ACTIONS.md.tpl',
+  'templates/.specs/features/delivery.md.tpl',
   'scripts/scan-profile.mjs',
   'scripts/map-codebase.mjs',
   'scripts/install-harness.mjs',
@@ -132,7 +139,14 @@ function runInstallSmoke() {
     'workflow.config.md',
     'docs/workflow/README.md',
     '.specs/README.md',
+    '.specs/project/PROJECT.md',
+    '.specs/project/STATE.md',
+    '.specs/project/ROADMAP.md',
+    '.specs/project/DEPLOY-PLAN.md',
     '.specs/project/context.md',
+    '.specs/quick/CURRENT-FOCUS.md',
+    '.specs/quick/NEXT-ACTIONS.md',
+    '.specs/features/delivery.md.tpl',
     '.specs/testing/strategy.md',
     'scripts/generate-specs.mjs',
     'scripts/map-codebase.mjs',
@@ -141,12 +155,16 @@ function runInstallSmoke() {
   for (const rel of required) {
     if (!fs.existsSync(path.join(fixture, rel))) fail(`install missing ${rel}`);
   }
+  const readme = fs.readFileSync(path.join(fixture, '.specs/README.md'), 'utf8');
+  if (!readme.includes('CURRENT-FOCUS')) fail('.specs/README.md missing GIA session order');
+  const agents = fs.readFileSync(path.join(fixture, 'AGENTS.md'), 'utf8');
+  if (!/CURRENT-FOCUS/.test(agents)) fail('AGENTS.md missing CURRENT-FOCUS session start');
   const discovery = fs.readFileSync(path.join(fixture, '.specs/codebase/DISCOVERY.md'), 'utf8');
   if (!discovery.includes('STACK.md')) fail('DISCOVERY.md missing cross-links');
   const concerns = fs.readFileSync(path.join(fixture, '.specs/codebase/CONCERNS.md'), 'utf8');
   if (concerns.split('\n').length < 5) fail('CONCERNS.md too short');
   fs.rmSync(fixture, { recursive: true, force: true });
-  ok('install-harness creates docs/workflow and .specs tree (8 codebase docs)');
+  ok('install-harness creates docs/workflow and .specs tree (8 codebase + project + quick + delivery.tpl)');
 }
 
 function runMapCodebaseSmoke() {

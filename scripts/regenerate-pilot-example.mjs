@@ -80,6 +80,23 @@ function main() {
     path.join(target, '.cursor', 'rules', 'workflow-core.mdc'),
   );
 
+  const configPath = path.join(target, 'docs', 'workflow', 'bootstrap', 'install-config.json');
+  if (fs.existsSync(configPath)) {
+    runNode(path.join(SKILL_ROOT, 'scripts', 'generate-specs.mjs'), [
+      '--target',
+      target,
+      '--config',
+      configPath,
+    ]);
+  } else if (fs.existsSync(path.join(SKILL_ROOT, 'scripts', 'install-config.example.json'))) {
+    runNode(path.join(SKILL_ROOT, 'scripts', 'generate-specs.mjs'), [
+      '--target',
+      target,
+      '--config',
+      path.join(SKILL_ROOT, 'scripts', 'install-config.example.json'),
+    ]);
+  }
+
   const readmeTpl = path.join(SKILL_ROOT, 'templates', 'docs', 'workflow', 'README.md.tpl');
   if (fs.existsSync(readmeTpl)) {
     let name = path.basename(target);
