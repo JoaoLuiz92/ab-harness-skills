@@ -23,7 +23,7 @@
   "TOOLS_LIST": "- Cursor\n- Codex",
   "INTEGRATIONS_SUMMARY": "Jira OFF | GitHub ON | Confluence OFF",
   "TASKS_SOURCE": "docs/workflow/next_actions.md",
-  "HARD_RULES": "- Do not commit secrets\n- Run validation lane before merge",
+  "HARD_RULES": "- Do not commit secrets or credentials\n- `.specs/` is source of truth; `docs/workflow/` is legacy mirror only\n- Run validation lane before merge — attach `.specs/testing/reports/<date>-<slug>.md`\n- Implementer does not self-validate: dispatch S0 runners (see MODEL-ROUTING.md)\n- Coordinator implements at S1; lane runners and merge evidence at S0\n- Re-plan (S2) before large scope changes — do not code past spec drift",
   "INSTALL_CMD": "npm install",
   "TEST_CMD": "npm test",
   "BUILD_CMD": "npm run build",

@@ -4,7 +4,7 @@ Use when `GITHUB_PULL_REQUESTS=OFF` or before manual merge.
 
 ## Pre-merge
 
-- [ ] Validation lane report: `docs/workflow/reports/<date>-<slug>.md` — **APROVADO**
+- [ ] Validation lane report: `.specs/testing/reports/<date>-<slug>.md` — **APROVADO**
 - [ ] Lint / build green (if configured)
 - [ ] Tests green for touched area
 - [ ] CI green (if exists)

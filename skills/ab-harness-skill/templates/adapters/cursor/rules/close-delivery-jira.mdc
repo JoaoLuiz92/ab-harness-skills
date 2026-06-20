@@ -18,4 +18,4 @@ When `JIRA_TASKS=ON` and card KEY is known:
 5. Update `.specs/quick/NEXT-ACTIONS.md`
 6. If MCP unavailable: note MCP_PENDING; inform user
 
-Link report: `docs/workflow/reports/<date>-<slug>.md`
+Link report: `.specs/testing/reports/<date>-<slug>.md`

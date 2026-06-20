@@ -49,6 +49,14 @@ const REQUIRED = [
   'templates/.specs/quick/CURRENT-FOCUS.md.tpl',
   'templates/.specs/quick/NEXT-ACTIONS.md.tpl',
   'templates/.specs/features/delivery.md.tpl',
+  'templates/.specs/testing/GATE-CHECKS.md.tpl',
+  'templates/.specs/testing/SUBAGENTS-FLOW.md.tpl',
+  'templates/.specs/testing/STRATEGY.md.tpl',
+  'templates/.specs/testing/MODEL-ROUTING.md.tpl',
+  'templates/adapters/cursor/rules/model-routing.mdc',
+  'templates/docs/workflow/upgrade-v1.3-to-v1.4.md.tpl',
+  'CHANGELOG.md',
+  'templates/.specs/testing/runners/lint-build.md.tpl',
   'scripts/scan-profile.mjs',
   'scripts/map-codebase.mjs',
   'scripts/install-harness.mjs',
@@ -96,6 +104,15 @@ function checkLayout() {
   }
   ok('skills/ab-harness-skill layout');
   readFrontmatter('ab-harness-skill');
+
+  const pkg = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'));
+  const skillRaw = fs.readFileSync(path.join(SKILL_ROOT, 'SKILL.md'), 'utf8');
+  const verMatch = skillRaw.match(/version:\s*"([^"]+)"/);
+  if (!verMatch) fail('SKILL.md missing metadata.version');
+  if (pkg.version !== verMatch[1]) {
+    fail(`version mismatch: package.json ${pkg.version} vs SKILL.md ${verMatch[1]}`);
+  }
+  ok(`version sync package.json ↔ SKILL.md (${pkg.version})`);
 
   const list = run('npx', ['skills', 'add', '.', '--list', '-y'], { cwd: REPO_ROOT });
   if (list.status !== 0) fail(`npx skills add --list failed:\n${list.out}`);
@@ -147,7 +164,21 @@ function runInstallSmoke() {
     '.specs/quick/CURRENT-FOCUS.md',
     '.specs/quick/NEXT-ACTIONS.md',
     '.specs/features/delivery.md.tpl',
-    '.specs/testing/strategy.md',
+    '.specs/testing/STRATEGY.md',
+    '.specs/testing/GATE-CHECKS.md',
+    '.specs/testing/SUBAGENTS.md',
+    '.specs/testing/SUBAGENTS-FLOW.md',
+    '.specs/testing/TEST-LANE-CLI.md',
+    '.specs/testing/CONTEXT-BOUNDARIES.md',
+    '.specs/testing/MODEL-ROUTING.md',
+    '.specs/testing/runners/lint-build.md',
+    '.specs/testing/runners/unit.md',
+    '.specs/testing/runners/integration.md',
+    '.specs/testing/runners/e2e.md',
+    '.specs/testing/runners/uat.md',
+    '.specs/testing/handoff/.gitkeep',
+    '.specs/testing/reports/TEMPLATE.md',
+    'docs/workflow/upgrade-v1.3-to-v1.4.md',
     'scripts/generate-specs.mjs',
     'scripts/map-codebase.mjs',
     ...CODEBASE_DOCS.map((f) => `.specs/codebase/${f}`),
@@ -159,12 +190,93 @@ function runInstallSmoke() {
   if (!readme.includes('CURRENT-FOCUS')) fail('.specs/README.md missing GIA session order');
   const agents = fs.readFileSync(path.join(fixture, 'AGENTS.md'), 'utf8');
   if (!/CURRENT-FOCUS/.test(agents)) fail('AGENTS.md missing CURRENT-FOCUS session start');
+  if (!/\.specs\/testing\/SUBAGENTS-FLOW/.test(agents)) fail('AGENTS.md missing .specs/testing lane pointer');
+  if (!/Source of truth/i.test(agents)) fail('AGENTS.md missing Source of truth section');
+  if (!/MODEL-ROUTING/.test(agents)) fail('AGENTS.md missing MODEL-ROUTING pointer');
+  if (!fs.existsSync(path.join(fixture, '.cursor/rules/model-routing.mdc'))) {
+    fail('install missing .cursor/rules/model-routing.mdc');
+  }
+  const modelRouting = fs.readFileSync(path.join(fixture, '.cursor/rules/validation-lane.mdc'), 'utf8');
+  if (!/S0/.test(modelRouting) || !/S1/.test(modelRouting)) {
+    fail('validation-lane.mdc missing S0/S1 model routing');
+  }
+  const workflowCfg = fs.readFileSync(path.join(fixture, 'workflow.config.md'), 'utf8');
+  if (!workflowCfg.includes('HANDOFF_DIR=.specs/testing/handoff')) {
+    fail('workflow.config.md missing .specs/testing/handoff path');
+  }
+  const subagentsFlow = fs.readFileSync(path.join(fixture, '.specs/testing/SUBAGENTS-FLOW.md'), 'utf8');
+  if (!subagentsFlow.includes('validation-lane:handoff')) fail('SUBAGENTS-FLOW.md missing handoff CLI');
   const discovery = fs.readFileSync(path.join(fixture, '.specs/codebase/DISCOVERY.md'), 'utf8');
   if (!discovery.includes('STACK.md')) fail('DISCOVERY.md missing cross-links');
   const concerns = fs.readFileSync(path.join(fixture, '.specs/codebase/CONCERNS.md'), 'utf8');
   if (concerns.split('\n').length < 5) fail('CONCERNS.md too short');
   fs.rmSync(fixture, { recursive: true, force: true });
-  ok('install-harness creates docs/workflow and .specs tree (8 codebase + project + quick + delivery.tpl)');
+  ok('install-harness creates docs/workflow and .specs tree (8 codebase + project + quick + testing lane)');
+}
+
+function runValidationLaneSmoke() {
+  const fixture = path.join(REPO_ROOT, 'tests', '.tmp-lane-smoke');
+  fs.rmSync(fixture, { recursive: true, force: true });
+  fs.mkdirSync(fixture, { recursive: true });
+  fs.copyFileSync(
+    path.join(SCAN_FIXTURE, 'package.json'),
+    path.join(fixture, 'package.json'),
+  );
+  fs.writeFileSync(path.join(fixture, 'README.md'), '# lane smoke\n');
+
+  const config = path.join(SKILL_ROOT, 'scripts', 'install-config.example.json');
+  const install = spawnSync(
+    process.execPath,
+    [path.join(SKILL_ROOT, 'scripts', 'install-harness.mjs'), '--config', config, '--target', fixture],
+    { encoding: 'utf8', cwd: REPO_ROOT },
+  );
+  if (install.status !== 0) fail(`lane smoke install failed:\n${install.stderr || install.stdout}`);
+
+  const slug = 'smoke-v14';
+  const handoff = spawnSync(
+    process.execPath,
+    [path.join(fixture, 'scripts/validation-lane.mjs'), '--write-handoff', '--name', slug, '--pattern', 'minimal'],
+    { encoding: 'utf8', cwd: fixture },
+  );
+  if (handoff.status !== 0) fail(`handoff failed:\n${handoff.stderr || handoff.stdout}`);
+
+  const handoffPath = path.join(fixture, '.specs/testing/handoff', `${slug}.json`);
+  if (!fs.existsSync(handoffPath)) fail(`handoff JSON missing at ${handoffPath}`);
+
+  for (const role of ['lint-build', 'unit', 'integration', 'e2e', 'uat']) {
+    const runner = spawnSync(
+      process.execPath,
+      [
+        path.join(fixture, 'scripts/validation-lane.mjs'),
+        '--runner',
+        role,
+        '--name',
+        slug,
+        '--pattern',
+        'minimal',
+      ],
+      { encoding: 'utf8', cwd: fixture },
+    );
+    if (runner.status !== 0) fail(`runner ${role} failed:\n${runner.stderr || runner.stdout}`);
+  }
+
+  const merge = spawnSync(
+    process.execPath,
+    [path.join(fixture, 'scripts/validation-lane.mjs'), '--merge', '--name', slug],
+    { encoding: 'utf8', cwd: fixture },
+  );
+  if (merge.status !== 0) fail(`merge failed:\n${merge.stderr || merge.stdout}`);
+
+  const reportsDir = path.join(fixture, '.specs/testing/reports');
+  const reports = fs.readdirSync(reportsDir).filter((f) => f.endsWith(`-${slug}.md`));
+  if (!reports.length) fail('merge did not produce dated report in .specs/testing/reports/');
+
+  const reportBody = fs.readFileSync(path.join(reportsDir, reports[0]), 'utf8');
+  if (!/APROVADO/.test(reportBody)) fail('lane report should be APROVADO');
+  if (!reportBody.includes('Consolidated by validation-lane merge')) fail('report missing merge banner');
+
+  fs.rmSync(fixture, { recursive: true, force: true });
+  ok('validation lane smoke: handoff → 5 runners → merge → .specs/testing/reports/');
 }
 
 function runMapCodebaseSmoke() {
@@ -354,6 +466,7 @@ runMapCodebaseSmoke();
 runHarnessOnlyGateSmoke();
 runMergeRefreshSmoke();
 runInstallSmoke();
+runValidationLaneSmoke();
 if (doInstall) installSmoke();
 console.log('\nAll checks passed.');
 if (!doInstall) {

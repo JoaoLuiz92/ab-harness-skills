@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires Node.js 18+ and git. Optional gh CLI and Atlassian MCP for integrations.
 metadata:
   author: JoaoLuiz92
-  version: "1.3.0"
+  version: "1.4.1"
 ---
 
 # AB Harness Skill
@@ -184,7 +184,7 @@ After templates, run `generate-specs.mjs` (also invoked by installer) to map the
 | bootstrap `codebase/` (if exists) | **copied** to `.specs/codebase/` (8 docs) |
 | else `map-codebase.mjs` fallback | `.specs/codebase/*.md` (scaffold + enrichment banner) |
 | install config | `.specs/project/` (PROJECT, STATE, ROADMAP, DEPLOY-PLAN, context) |
-| templates | `.specs/README.md`, `features/` (+ `delivery.md.tpl`), `quick/` (CURRENT-FOCUS, NEXT-ACTIONS), `testing/strategy.md` |
+| templates | `.specs/README.md`, `features/` (+ `delivery.md.tpl`), `quick/` (CURRENT-FOCUS, NEXT-ACTIONS), `testing/` (STRATEGY, GATE-CHECKS, SUBAGENTS-FLOW, runners, handoff/, reports/) |
 
 Replace `{{KEY}}` placeholders from scan + interview.
 

@@ -1,5 +1,7 @@
 # Validation Lane (local reference)
 
+> **Canonical:** [.specs/testing/SUBAGENTS-FLOW.md](../../.specs/testing/SUBAGENTS-FLOW.md) · [TEST-LANE-CLI.md](../../.specs/testing/TEST-LANE-CLI.md) · [GATE-CHECKS.md](../../.specs/testing/GATE-CHECKS.md)
+
 Full methodology: isolated validation before merge.
 
 ## Principle

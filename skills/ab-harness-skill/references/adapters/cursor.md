@@ -13,6 +13,7 @@
 |------|------|
 | `workflow-core.mdc` | Always |
 | `validation-lane.mdc` | Always |
+| `model-routing.mdc` | Always |
 | `close-delivery-jira.mdc` | `JIRA_TASKS=ON` |
 | `close-delivery-local.mdc` | `JIRA_TASKS=OFF` |
 | `create-pr.mdc` | `GITHUB_PULL_REQUESTS=ON` |

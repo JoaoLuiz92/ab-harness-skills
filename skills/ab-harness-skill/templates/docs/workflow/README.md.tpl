@@ -7,7 +7,7 @@ Agent development methodology for **{{PROJECT_NAME}}**.
 1. Read [workflow.config.md](../../workflow.config.md) at repo root
 2. Skim [.specs/codebase/DISCOVERY.md](../../.specs/codebase/DISCOVERY.md) and [.specs/project/context.md](../../.specs/project/context.md)
 3. Read [next_actions.md](next_actions.md) for current queue
-4. Follow [test-lane.md](test-lane.md) when closing deliveries
+4. Follow [.specs/testing/SUBAGENTS-FLOW.md](../../.specs/testing/SUBAGENTS-FLOW.md) when closing deliveries (legacy: [test-lane.md](test-lane.md))
 
 ## Methodology (summary)
 
@@ -16,6 +16,7 @@ Agent development methodology for **{{PROJECT_NAME}}**.
 | Spec-driven development | Bootstrap skill `references/methodology/sdd.md` |
 | Validation lane | [test-lane.md](test-lane.md) |
 | Merge gates | [gates.md](gates.md) |
+| Upgrade v1.3→v1.4 | [upgrade-v1.3-to-v1.4.md](upgrade-v1.3-to-v1.4.md) |
 | Feedback loops | Fast loop during dev; formal lane before merge |
 
 ## Directory layout
@@ -26,18 +27,17 @@ Agent development methodology for **{{PROJECT_NAME}}**.
 ├── project/            context from bootstrap
 ├── features/<name>/    spec, design, tasks
 ├── quick/              small-scope specs
-└── testing/            strategy
+└── testing/            STRATEGY, GATE-CHECKS, SUBAGENTS-FLOW, handoff/, reports/, runners/
 
 docs/workflow/
 ├── README.md           (this file)
 ├── next_actions.md     (task queue if JIRA_TASKS=OFF)
 ├── merge-checklist.md
-├── test-lane.md
+├── test-lane.md        (legacy pointer → .specs/testing/)
+├── gates.md            (legacy pointer → .specs/testing/)
 ├── pilot-guide.md
 ├── mcp-setup.md
 ├── lane-commands.json
-├── handoff/
-├── reports/
 └── bootstrap/          (install artifacts)
 ```
 

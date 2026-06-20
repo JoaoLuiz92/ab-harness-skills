@@ -94,39 +94,53 @@ function enrichInstallVars(vars) {
   };
 }
 
-function buildTestingStrategy(profile, vars) {
-  return [
-    '# Testing strategy',
-    '',
-    `> Generated for **${vars.PROJECT_NAME || 'project'}**. Formal validation lane: [docs/workflow/test-lane.md](../../docs/workflow/test-lane.md).`,
-    '',
-    '## Frameworks detected',
-    '',
-    profile.testFrameworks.length
+function buildTestingVars(profile, vars) {
+  return {
+    ...vars,
+    TEST_FRAMEWORKS_LIST: profile.testFrameworks.length
       ? profile.testFrameworks.map((f) => `- ${f}`).join('\n')
       : '_None — add conventions when tests are introduced._',
-    '',
-    '## Fast loop (during development)',
-    '',
-    vars.TEST_CMD ? `- Default: \`${vars.TEST_CMD}\`` : '- Set project test command in AGENTS.md',
-    '',
-    '## Validation lane (before merge)',
-    '',
-    '- Config: `docs/workflow/lane-commands.json`',
-    '- Handoff: `npm run validation-lane:handoff -- --name <slug> ...`',
-    '- Merge report: `docs/workflow/reports/<date>-<slug>.md`',
-    '',
-    '## Codebase test map',
-    '',
-    '- [codebase/TESTING.md](codebase/TESTING.md) — inventory and CI',
-    '- [codebase/DISCOVERY.md](codebase/DISCOVERY.md) — discovery index',
-    '',
-    formatLaneCommands(profile),
-    '',
-    '## Traceability',
-    '',
-    'Each acceptance criterion in `.specs/features/` or `.specs/quick/` should map to at least one test or gate check before merge.',
-  ].join('\n');
+    FAST_LOOP_LINE: vars.TEST_CMD
+      ? `- Default: \`${vars.TEST_CMD}\``
+      : '- Set project test command in AGENTS.md',
+    LANE_COMMANDS_SECTION: formatLaneCommands(profile),
+  };
+}
+
+function ensureEmptyDir(dirPath) {
+  fs.mkdirSync(dirPath, { recursive: true });
+  const keep = path.join(dirPath, '.gitkeep');
+  if (!fs.existsSync(keep)) {
+    fs.writeFileSync(keep, '', 'utf8');
+  }
+}
+
+function writeTestingTree(specsRoot, profile, installVars) {
+  const testingVars = buildTestingVars(profile, installVars);
+  const tplFiles = [
+    ['GATE-CHECKS.md.tpl', 'GATE-CHECKS.md'],
+    ['SUBAGENTS.md.tpl', 'SUBAGENTS.md'],
+    ['SUBAGENTS-FLOW.md.tpl', 'SUBAGENTS-FLOW.md'],
+    ['TEST-LANE-CLI.md.tpl', 'TEST-LANE-CLI.md'],
+    ['CONTEXT-BOUNDARIES.md.tpl', 'CONTEXT-BOUNDARIES.md'],
+    ['MODEL-ROUTING.md.tpl', 'MODEL-ROUTING.md'],
+    ['STRATEGY.md.tpl', 'STRATEGY.md'],
+    ['reports/TEMPLATE.md.tpl', 'reports/TEMPLATE.md'],
+  ];
+  for (const [tpl, dest] of tplFiles) {
+    writeFromTpl(`testing/${tpl}`, path.join(specsRoot, 'testing', dest), testingVars);
+  }
+
+  for (const role of ['lint-build', 'unit', 'integration', 'e2e', 'uat']) {
+    writeFromTpl(
+      `testing/runners/${role}.md.tpl`,
+      path.join(specsRoot, 'testing', 'runners', `${role}.md`),
+      testingVars,
+    );
+  }
+
+  ensureEmptyDir(path.join(specsRoot, 'testing', 'handoff'));
+  ensureEmptyDir(path.join(specsRoot, 'testing', 'reports'));
 }
 
 function resolveCodebaseMap(target, profile, vars, options = {}) {
@@ -164,7 +178,7 @@ export function generateSpecs(target, vars = {}, options = {}) {
   const installVars = enrichInstallVars(vars);
 
   resolveCodebaseMap(target, profile, installVars, options);
-  writeFile(path.join(specsRoot, 'testing', 'strategy.md'), buildTestingStrategy(profile, installVars));
+  writeTestingTree(specsRoot, profile, installVars);
 
   const tplFiles = [
     ['README.md.tpl', 'README.md'],

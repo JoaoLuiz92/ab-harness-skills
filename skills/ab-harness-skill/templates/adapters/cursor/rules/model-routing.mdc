@@ -1,0 +1,17 @@
+---
+description: Model tier selection by work type (S0–S3)
+alwaysApply: true
+---
+
+# Model routing
+
+Canonical: `.specs/testing/MODEL-ROUTING.md`
+
+| Tier | Use for |
+|------|---------|
+| **S0** | Lane runners, merge, lint, grep, boilerplate |
+| **S1** | Implementation with clear spec; coordinator handoff + merge |
+| **S2** | Specify, design, tasks, trade-offs |
+| **S3** | Auth, payments, migrations — escalate only |
+
+**Rules:** Planned at S2 → implement at S1. Implemented at S1 → validate at S0 (isolated runners).

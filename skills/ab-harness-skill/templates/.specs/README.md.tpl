@@ -30,8 +30,17 @@ Agent-readable project knowledge. Generated at bootstrap; update as the codebase
 │   ├── README.md
 │   ├── delivery.md.tpl    (copy to <slug>/delivery.md when closing)
 │   └── <slug>/
-└── testing/               (test strategy + lane hints)
-    └── strategy.md
+└── testing/               (validation lane — source of truth)
+    ├── STRATEGY.md
+    ├── GATE-CHECKS.md
+    ├── SUBAGENTS.md
+    ├── SUBAGENTS-FLOW.md
+    ├── TEST-LANE-CLI.md
+    ├── CONTEXT-BOUNDARIES.md
+    ├── MODEL-ROUTING.md
+    ├── handoff/           (JSON scope per delivery)
+    ├── reports/           (runner evidence + merged reports)
+    └── runners/           (lint-build, unit, integration, e2e, uat)
 ```
 
 ## Session start (GIA order)

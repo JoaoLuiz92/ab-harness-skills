@@ -46,7 +46,7 @@ npm run validation-lane:merge -- --name <slug>
 
 - [ ] Tests passed
 - [ ] Lint / build passed (if applicable)
-- [ ] Validation lane **APROVADO** — report: `docs/workflow/reports/<date>-<slug>.md`
+- [ ] Validation lane **APROVADO** — report: `.specs/testing/reports/<date>-<slug>.md`
 
 ---
 

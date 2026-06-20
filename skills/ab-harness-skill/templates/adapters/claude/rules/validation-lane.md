@@ -7,4 +7,4 @@ Closing deliveries with code changes:
 3. Merge CLI
 4. Attach report to PR / tracker
 
-See `docs/workflow/test-lane.md`.
+See `.specs/testing/SUBAGENTS-FLOW.md` (legacy: `docs/workflow/test-lane.md`).
