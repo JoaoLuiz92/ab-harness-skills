@@ -54,14 +54,21 @@ function copyDirRules(srcDir, destDir, vars, filter) {
   }
 }
 
-function mergePackageScripts(target, fragmentPath) {
+function mergePackageScripts(target, fragmentPath, vars = {}) {
   const pkgPath = path.join(target, 'package.json');
-  if (!fs.existsSync(pkgPath)) {
-    console.warn('No package.json — skip scripts merge');
-    return;
-  }
-  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
   const fragment = JSON.parse(fs.readFileSync(fragmentPath, 'utf8'));
+  let pkg;
+  if (!fs.existsSync(pkgPath)) {
+    const slug =
+      (vars.PROJECT_NAME || path.basename(target))
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '') || 'project';
+    pkg = { name: slug, version: '0.0.0', private: true, scripts: {} };
+    console.log(`Created ${pkgPath} (harness root package)`);
+  } else {
+    pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+  }
   pkg.scripts = { ...pkg.scripts, ...fragment };
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
   console.log('Merged package.json scripts');
@@ -100,7 +107,7 @@ function main() {
     console.log(`Wrote ${dest}`);
   }
 
-  mergePackageScripts(target, path.join(TPL, 'package.json.scripts.fragment'));
+  mergePackageScripts(target, path.join(TPL, 'package.json.scripts.fragment'), vars);
 
   if (tools.includes('cursor')) {
     const jiraOn = vars.JIRA_TASKS === 'ON';
