@@ -1,40 +1,48 @@
 # Interview Questions
 
-Ask in batches of **3–5**. Maximum **3 rounds** unless critical gaps remain. Document answers in `docs/workflow/bootstrap/context.md`.
+Deliver via **AskQuestion** — one call per round. See [interaction-questionnaire.md](interaction-questionnaire.md). **Never** ask interview topics as free-text chat lists. Translate prompts to the user's `LANGUAGE`. Document answers in `docs/workflow/bootstrap/context.md`.
 
 ## Round 1 — Tools and process
 
-1. Which AI tools does the team use? (`cursor`, `claude`, `codex` — multiple OK)
-2. Branch strategy? (e.g. `main` + `develop`, trunk-based, gitflow)
-3. Is production active? Can merges break live users?
-4. Who approves merge to production?
-5. One sentence: what does this project do?
+| id | Topic | Type |
+|----|-------|------|
+| `tools` | AI tools (`cursor`, `claude`, `codex`) | multi-select |
+| `branch_strategy` | Branch strategy | select (+ other) |
+| `production_risk` | Production active / merge risk | select |
+| `merge_approver` | Who approves production merge | select (+ other) |
+| — | One sentence: what does this project do? | free-text (chat after round) |
 
 ## Round 2 — Integrations (flags)
 
-6. **JIRA_TASKS** — Track work in Jira (or similar)? `ON` / `OFF`
-   - If ON: project key? MCP already configured?
-7. **GITHUB_PULL_REQUESTS** — Use PRs via GitHub/GitLab? `ON` / `OFF`
-   - If ON: `gh` CLI or MCP available?
-8. **CONFLUENCE** — Document for whole team on wiki? `ON` / `OFF`
-   - If ON: space key? MCP available?
+| id | Flag | Options |
+|----|------|---------|
+| `jira_tasks` | JIRA_TASKS | ON / OFF |
+| `github_pull_requests` | GITHUB_PULL_REQUESTS | ON / OFF |
+| `confluence` | CONFLUENCE | ON / OFF |
 
-If ON but MCP not ready: record `MCP_PENDING` in `workflow.config.md`.
+If ON: one follow-up for project key, space key, or MCP status. If MCP not ready: record `MCP_PENDING` in `workflow.config.md`.
 
 ## Round 3 — Quality and risk
 
-9. What must never regress? (list 2–5 critical flows)
-10. Current test confidence: none / low / medium / high?
-11. Does CI block merge today? What runs?
-12. Database: where is schema? Local dev how?
-13. Auth / payments / PII — any guard-rail areas for agents?
+| id | Topic | Type |
+|----|-------|------|
+| `test_confidence` | Test confidence | select: none / low / medium / high |
+| `ci_blocks_merge` | CI blocks merge | select: yes / no / partial |
+| `guard_rails` | Auth / payments / PII guard-rails | select: yes / no / unsure |
+| — | Critical flows that must never regress (2–5) | free-text |
+| — | Database: schema location, local dev | free-text if scan unclear |
+| — | CI jobs today (if not in scan) | free-text if needed |
 
 ## Round 4 — Optional (if complex)
 
-14. Monorepo: which package is the pilot?
-15. Existing issue tracker workflow states? (e.g. In Progress → PR Review)
-16. Deploy: manual or automatic? Checklist exists?
-17. Desired timeline for harness adoption (sprints)?
+Ask only when scan or prior answers indicate need:
+
+| Topic | Type |
+|-------|------|
+| Monorepo pilot package | select or free-text |
+| Issue tracker workflow states | free-text |
+| Deploy manual vs automatic | select |
+| Harness adoption timeline | free-text |
 
 ## Inference rules (do not ask if scan is clear)
 
@@ -49,5 +57,5 @@ If ON but MCP not ready: record `MCP_PENDING` in `workflow.config.md`.
 Produce:
 
 - Completed `workflow.config.md` values
-- `context.md` with decisions
+- `context.md` with decisions (include `LANGUAGE`)
 - Input for gap analysis (maturity-model.md)

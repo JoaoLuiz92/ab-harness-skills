@@ -18,12 +18,13 @@ Also discoverable on [skills.sh](https://skills.sh).
 
 ## What the skill does
 
-Six-phase bootstrap on a **target repository**:
+Bootstrap on a **target repository** (language select first, then six phases):
 
+0. **Language** — AskQuestion: English, Português, Español, or Other
 1. **Scan** — read-only profile (`scan-profile.mjs`)
-2. **Interview** — tools, integrations, branches
+2. **Interview** — AskQuestion rounds (tools, integrations, branches)
 3. **Gap analysis** — maturity scoring
-4. **Plan** — phased rollout (approval required before install)
+4. **Plan** — phased rollout; **AskQuestion approval** before install
 5. **Install** — templates → `workflow.config.md`, `.specs/`, `docs/workflow/`, adapters
 6. **Pilot** — first delivery through validation lane
 
@@ -52,6 +53,10 @@ npm run test:skill-install
 
 - Node.js 18+
 - Git (recommended on target repos)
+
+## Credits
+
+Methodology and workflow patterns adapted from **[Tech Leads Club (TLC)](https://techleads.club/)** [Agent Skills](https://agent-skills.techleads.club/) (e.g. `tlc-spec-driven`). See [skills/ab-harness-skill/CREDITS.md](skills/ab-harness-skill/CREDITS.md).
 
 ## License
 
