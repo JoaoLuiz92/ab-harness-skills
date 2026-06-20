@@ -1,45 +1,47 @@
 # Discovery Checklist
 
-Read-only scan before changing production code. Use with `scripts/scan-profile.mjs` output.
+Read-only scan before changing production code. Use with `scripts/scan-profile.mjs` + `scripts/map-codebase.mjs` output.
 
-## Repository
+Each item maps to a target doc in `docs/workflow/bootstrap/codebase/` (or `.tmp-harness-codebase/` in plan mode).
 
-- [ ] Git root identified
-- [ ] Monorepo vs single package
-- [ ] Primary language(s)
-- [ ] Package manager (npm, pnpm, yarn, pip, cargo, go mod, etc.)
+## Repository → DISCOVERY, STACK
 
-## Structure
+- [ ] Git root identified → STRUCTURE
+- [ ] Monorepo vs single package → STRUCTURE
+- [ ] Primary language(s) → STACK
+- [ ] Package manager (npm, pnpm, yarn, pip, cargo, go mod, etc.) → STACK
 
-- [ ] Backend path(s)
-- [ ] Frontend path(s)
-- [ ] Shared packages
-- [ ] Database / migrations path
-- [ ] Infrastructure (docker, k8s, terraform)
+## Structure → STRUCTURE, ARCHITECTURE
 
-## Build and run
+- [ ] Backend path(s) → STRUCTURE
+- [ ] Frontend path(s) → STRUCTURE
+- [ ] Shared packages → STRUCTURE
+- [ ] Database / migrations path → STRUCTURE
+- [ ] Infrastructure (docker, k8s, terraform) → STACK, STRUCTURE
 
-- [ ] Install command
-- [ ] Dev start command(s)
-- [ ] Production build command(s)
-- [ ] Required env vars (from `.env.example` or docs)
+## Build and run → STACK
 
-## Tests
+- [ ] Install command → STACK
+- [ ] Dev start command(s) → STACK
+- [ ] Production build command(s) → STACK
+- [ ] Required env vars (from `.env.example` or docs) → INTEGRATIONS
 
-- [ ] Unit test runner and config
-- [ ] Integration test pattern
-- [ ] E2E test runner (if any)
-- [ ] UI/UAT framework (if any)
-- [ ] Coverage command (if any)
+## Tests → TESTING
 
-## CI/CD
+- [ ] Unit test runner and config → TESTING
+- [ ] Integration test pattern → TESTING
+- [ ] E2E test runner (if any) → TESTING
+- [ ] UI/UAT framework (if any) → TESTING
+- [ ] Coverage command (if any) → TESTING
 
-- [ ] CI platform (GitHub Actions, GitLab CI, etc.)
-- [ ] Jobs: lint, test, build
-- [ ] Blocking vs informational
-- [ ] Deploy trigger (manual, push, tag)
+## CI/CD → STACK, TESTING, CONCERNS
 
-## Agent tooling (existing)
+- [ ] CI platform (GitHub Actions, GitLab CI, etc.) → STACK
+- [ ] Jobs: lint, test, build → TESTING
+- [ ] Blocking vs informational → CONCERNS
+- [ ] Deploy trigger (manual, push, tag) → CONCERNS
+
+## Agent tooling (existing) → DISCOVERY
 
 - [ ] `AGENTS.md`
 - [ ] `CLAUDE.md`
@@ -47,14 +49,14 @@ Read-only scan before changing production code. Use with `scripts/scan-profile.m
 - [ ] `.claude/rules/`
 - [ ] MCP config hints
 
-## Integrations (detect + confirm)
+## Integrations (detect + confirm) → INTEGRATIONS
 
 - [ ] Issue tracker mentions (Jira, Linear, etc.)
 - [ ] Git hosting (GitHub, GitLab)
 - [ ] Wiki mentions (Confluence, Notion)
-- [ ] External APIs / auth patterns
+- [ ] External APIs / auth patterns → ARCHITECTURE, CONVENTIONS
 
-## Concerns (record, do not fix)
+## Concerns (record, do not fix) → CONCERNS
 
 - [ ] Direct DB access from frontend
 - [ ] Secrets in repo history
@@ -64,4 +66,9 @@ Read-only scan before changing production code. Use with `scripts/scan-profile.m
 
 ## Output
 
-Write findings to `docs/workflow/bootstrap/profile.md` in target repo (or `.tmp-profile.md` during plan-only).
+| Artifact | Phase |
+|----------|-------|
+| `docs/workflow/bootstrap/profile.md` + `profile.json` | 1a (scan) |
+| `docs/workflow/bootstrap/codebase/*.md` (8 files) | 1a scaffold + 1b enrichment |
+
+Gate: `DISCOVERY.md` gate **passed** before Q5 — ≥80% of **applicable** checklist items (`[~]` = N/A, not counted). Harness-only repos use the harness gate (see `codebase-mapping-protocol.md`).

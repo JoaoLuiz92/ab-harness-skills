@@ -12,7 +12,8 @@
     "scan": "node skills/ab-harness-skill/scripts/scan-profile.mjs",
     "install:harness": "node skills/ab-harness-skill/scripts/install-harness.mjs",
     "test:skill-package": "node scripts/test-skill-package.mjs",
-    "test:skill-install": "node scripts/test-skill-package.mjs --install"
+    "test:skill-install": "node scripts/test-skill-package.mjs --install",
+    "regenerate:pilot-example": "node scripts/regenerate-pilot-example.mjs"
   },
   "engines": {
     "node": ">=18"

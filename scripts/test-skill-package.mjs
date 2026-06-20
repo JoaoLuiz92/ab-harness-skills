@@ -7,20 +7,47 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SKILL_ROOT = path.join(REPO_ROOT, 'skills', 'ab-harness-skill');
 const SCAN_FIXTURE = path.join(REPO_ROOT, 'tests', 'fixtures', 'minimal-repo');
+const BROWNFIELD_FIXTURE = path.join(REPO_ROOT, 'tests', 'fixtures', 'brownfield-repo');
+const HARNESS_ONLY_FIXTURE = path.join(REPO_ROOT, 'tests', 'fixtures', 'harness-only-repo');
 const INSTALL_FIXTURE = path.join(REPO_ROOT, 'tests', '.tmp-install');
+
+const { computeChecklistStats } = await import(
+  pathToFileURL(path.join(SKILL_ROOT, 'scripts', 'map-codebase.mjs')).href
+);
+const { buildProfile } = await import(
+  pathToFileURL(path.join(SKILL_ROOT, 'scripts', 'scan-profile.mjs')).href
+);
+const { mapCodebase } = await import(
+  pathToFileURL(path.join(SKILL_ROOT, 'scripts', 'map-codebase.mjs')).href
+);
+
+const CODEBASE_DOCS = [
+  'DISCOVERY.md',
+  'STACK.md',
+  'ARCHITECTURE.md',
+  'STRUCTURE.md',
+  'CONVENTIONS.md',
+  'TESTING.md',
+  'INTEGRATIONS.md',
+  'CONCERNS.md',
+];
 
 const REQUIRED = [
   'SKILL.md',
   'references/methodology/sdd.md',
+  'references/codebase-mapping-protocol.md',
   'templates/workflow.config.md.tpl',
   'scripts/scan-profile.mjs',
+  'scripts/map-codebase.mjs',
   'scripts/install-harness.mjs',
   'scripts/generate-specs.mjs',
+  'scripts/extractors/index.mjs',
+  'scripts/extractors/deep-analysis.mjs',
   'LICENSE',
 ];
 
@@ -67,8 +94,22 @@ function checkLayout() {
   if (list.status !== 0) fail(`npx skills add --list failed:\n${list.out}`);
   if (!/ab-harness-skill/.test(list.out)) fail('CLI did not discover ab-harness-skill');
   ok('npx skills add --list discovers ab-harness-skill');
-}
 
+  const staleHits = [];
+  function walkStale(dir) {
+    for (const name of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, name.name);
+      if (name.isDirectory()) walkStale(p);
+      else if (/\.(md|mdc|tpl)$/.test(name.name)) {
+        const body = fs.readFileSync(p, 'utf8');
+        if (/overview\.md/.test(body)) staleHits.push(path.relative(SKILL_ROOT, p));
+      }
+    }
+  }
+  walkStale(SKILL_ROOT);
+  if (staleHits.length) fail(`stale overview.md references in:\n${staleHits.join('\n')}`);
+  ok('no stale overview.md references in skill templates');
+}
 function runInstallSmoke() {
   const fixture = path.join(REPO_ROOT, 'tests', '.tmp-harness-install');
   fs.rmSync(fixture, { recursive: true, force: true });
@@ -91,16 +132,147 @@ function runInstallSmoke() {
     'workflow.config.md',
     'docs/workflow/README.md',
     '.specs/README.md',
-    '.specs/codebase/overview.md',
     '.specs/project/context.md',
     '.specs/testing/strategy.md',
     'scripts/generate-specs.mjs',
+    'scripts/map-codebase.mjs',
+    ...CODEBASE_DOCS.map((f) => `.specs/codebase/${f}`),
   ];
   for (const rel of required) {
     if (!fs.existsSync(path.join(fixture, rel))) fail(`install missing ${rel}`);
   }
+  const discovery = fs.readFileSync(path.join(fixture, '.specs/codebase/DISCOVERY.md'), 'utf8');
+  if (!discovery.includes('STACK.md')) fail('DISCOVERY.md missing cross-links');
+  const concerns = fs.readFileSync(path.join(fixture, '.specs/codebase/CONCERNS.md'), 'utf8');
+  if (concerns.split('\n').length < 5) fail('CONCERNS.md too short');
   fs.rmSync(fixture, { recursive: true, force: true });
-  ok('install-harness creates docs/workflow and .specs tree');
+  ok('install-harness creates docs/workflow and .specs tree (8 codebase docs)');
+}
+
+function runMapCodebaseSmoke() {
+  const outDir = path.join(BROWNFIELD_FIXTURE, '.tmp-codebase-map');
+  fs.rmSync(outDir, { recursive: true, force: true });
+
+  const profilePath = path.join(BROWNFIELD_FIXTURE, '.tmp-profile.json');
+  const scan = spawnSync(
+    process.execPath,
+    [
+      path.join(SKILL_ROOT, 'scripts', 'scan-profile.mjs'),
+      '--cwd',
+      BROWNFIELD_FIXTURE,
+      '--json',
+      '--out',
+      profilePath,
+    ],
+    { encoding: 'utf8', cwd: REPO_ROOT },
+  );
+  if (scan.status !== 0) fail(`brownfield scan failed:\n${scan.stderr || scan.stdout}`);
+
+  const profile = JSON.parse(fs.readFileSync(profilePath, 'utf8'));
+  if (!profile.packages?.length) fail('brownfield profile missing packages');
+  if (!profile.envVars?.length) fail('brownfield profile missing envVars');
+  if (!profile.ciJobs?.length) fail('brownfield profile missing ciJobs');
+
+  const map = spawnSync(
+    process.execPath,
+    [
+      path.join(SKILL_ROOT, 'scripts', 'map-codebase.mjs'),
+      '--cwd',
+      BROWNFIELD_FIXTURE,
+      '--profile',
+      profilePath,
+      '--out',
+      outDir,
+    ],
+    { encoding: 'utf8', cwd: REPO_ROOT },
+  );
+  if (map.status !== 0) fail(`map-codebase failed:\n${map.stderr || map.stdout}`);
+
+  for (const doc of CODEBASE_DOCS) {
+    const p = path.join(outDir, doc);
+    if (!fs.existsSync(p)) fail(`map-codebase missing ${doc}`);
+    const body = fs.readFileSync(p, 'utf8');
+    if (body.length < 100) fail(`${doc} output too short`);
+  }
+
+  const stack = fs.readFileSync(path.join(outDir, 'STACK.md'), 'utf8');
+  if (!/backend|frontend/i.test(stack)) fail('STACK.md missing monorepo packages');
+  if (!/lint|test|build/i.test(stack)) fail('STACK.md missing CI/commands depth');
+
+  const arch = fs.readFileSync(path.join(outDir, 'ARCHITECTURE.md'), 'utf8');
+  if (!/backend\/src\/main|UsersModule|react-route/i.test(arch)) fail('ARCHITECTURE.md lacks code-derived modules/routes');
+  if (!/mermaid/i.test(arch)) fail('ARCHITECTURE.md missing layer diagram');
+
+  const struct = fs.readFileSync(path.join(outDir, 'STRUCTURE.md'), 'utf8');
+  if (!/backend|frontend/i.test(struct)) fail('STRUCTURE.md missing annotated tree');
+
+  const integrations = fs.readFileSync(path.join(outDir, 'INTEGRATIONS.md'), 'utf8');
+  if (!/DATABASE_URL|JWT_SECRET|VITE_API_URL/i.test(integrations)) fail('INTEGRATIONS.md missing env vars');
+
+  const concerns = fs.readFileSync(path.join(outDir, 'CONCERNS.md'), 'utf8');
+  if (!/\| (High|Medium|Low) \|/i.test(concerns)) fail('CONCERNS.md missing severity table');
+
+  const testing = fs.readFileSync(path.join(outDir, 'TESTING.md'), 'utf8');
+  if (!/jest|vitest/i.test(testing)) fail('TESTING.md missing frameworks');
+  if (!/\.spec\.|\.test\./i.test(testing)) fail('TESTING.md missing test inventory');
+
+  const stats = computeChecklistStats(profile);
+  if (stats.applicablePct < 80) fail(`brownfield applicable checklist ${stats.applicablePct}% < 80%`);
+  if (!stats.gatePassed) fail('brownfield checklist gate should pass');
+
+  fs.unlinkSync(profilePath);
+  fs.rmSync(outDir, { recursive: true, force: true });
+  ok('map-codebase smoke test on tests/fixtures/brownfield-repo');
+}
+
+function runHarnessOnlyGateSmoke() {
+  const outDir = path.join(HARNESS_ONLY_FIXTURE, '.tmp-codebase-map');
+  fs.rmSync(outDir, { recursive: true, force: true });
+
+  const profile = buildProfile(HARNESS_ONLY_FIXTURE);
+  if (!profile.deep?.harness?.isHarnessRepo) fail('harness-only fixture should detect isHarnessRepo');
+
+  mapCodebase(profile, outDir);
+  const stats = computeChecklistStats(profile);
+  if (!stats.harnessOnly) fail('harness-only stats.harnessOnly should be true');
+  if (!stats.gatePassed) fail(`harness-only gate failed (${stats.applicableChecked}/${stats.applicableTotal})`);
+
+  const discovery = fs.readFileSync(path.join(outDir, 'DISCOVERY.md'), 'utf8');
+  if (!/\[~\]/.test(discovery) || !/harness repo/i.test(discovery)) {
+    fail('DISCOVERY.md missing N/A checklist items');
+  }
+  if (!/gate \*\*passed\*\*/i.test(discovery)) fail('DISCOVERY.md gate should show passed');
+
+  fs.rmSync(outDir, { recursive: true, force: true });
+  ok('harness-only-repo checklist gate passes with N/A items');
+}
+
+function runMergeRefreshSmoke() {
+  const outDir = path.join(BROWNFIELD_FIXTURE, '.tmp-merge-map');
+  fs.rmSync(outDir, { recursive: true, force: true });
+
+  const profile = buildProfile(BROWNFIELD_FIXTURE);
+  mapCodebase(profile, outDir);
+
+  const stackPath = path.join(outDir, 'STACK.md');
+  let stack = fs.readFileSync(stackPath, 'utf8');
+  const manualNote = '## Team notes\n\nManual preservation test paragraph.\n';
+  stack = stack.replace('# Stack', `# Stack\n\n${manualNote}`);
+  fs.writeFileSync(stackPath, stack, 'utf8');
+
+  profile.testFrameworks = [...(profile.testFrameworks || []), 'playwright-extra-fixture'];
+  mapCodebase(profile, outDir, { merge: true });
+
+  const merged = fs.readFileSync(stackPath, 'utf8');
+  if (!merged.includes('Manual preservation test paragraph.')) {
+    fail('merge did not preserve manual content outside auto blocks');
+  }
+  if (!merged.includes('playwright-extra-fixture')) {
+    fail('merge did not refresh auto sections with updated profile');
+  }
+
+  fs.rmSync(outDir, { recursive: true, force: true });
+  ok('map-codebase --merge preserves manual content and refreshes auto sections');
 }
 
 function runScanSmoke() {
@@ -160,6 +332,9 @@ const doInstall = process.argv.includes('--install');
 console.log('=== ab-harness-skill skills.sh package test ===\n');
 checkLayout();
 runScanSmoke();
+runMapCodebaseSmoke();
+runHarnessOnlyGateSmoke();
+runMergeRefreshSmoke();
 runInstallSmoke();
 if (doInstall) installSmoke();
 console.log('\nAll checks passed.');

@@ -7,15 +7,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildProfile } from './scan-profile.mjs';
+import { mapCodebase } from './map-codebase.mjs';
 
 const SKILL_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TPL = path.join(SKILL_ROOT, 'templates', '.specs');
 
 function parseArgs(argv) {
-  const args = { target: process.cwd(), config: null };
+  const args = { target: process.cwd(), config: null, merge: false };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === '--target' && argv[i + 1]) args.target = path.resolve(argv[++i]);
     else if (argv[i] === '--config' && argv[i + 1]) args.config = path.resolve(argv[++i]);
+    else if (argv[i] === '--merge') args.merge = true;
   }
   return args;
 }
@@ -42,102 +44,37 @@ function writeFromTpl(tplName, destPath, vars) {
   return true;
 }
 
-function formatPackages(profile) {
-  if (!profile.packages.length) return '_No package manifests detected._';
-  return profile.packages
-    .map((pkg) => {
-      const scripts = pkg.scripts.length ? pkg.scripts.join(', ') : 'none';
-      return `### \`${pkg.path}\`\n\n- Name: ${pkg.name || 'n/a'}\n- Scripts: ${scripts}`;
-    })
-    .join('\n\n');
-}
-
-function formatDirs(profile) {
-  const dirs = profile.topLevelDirs.slice(0, 40);
-  if (!dirs.length) return '_No top-level directories detected._';
-  return dirs.map((d) => `- \`${d}\``).join('\n');
-}
-
-function formatIntegrationHints(profile) {
-  if (!profile.integrationHints.length) return '_None detected from README/package scan._';
-  return profile.integrationHints.map((h) => `- **${h.pattern}** mentioned in \`${h.file}\``).join('\n');
+function copyDirRecursive(src, dest) {
+  fs.mkdirSync(dest, { recursive: true });
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      copyDirRecursive(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+      console.log(`Copied ${destPath}`);
+    }
+  }
 }
 
 function formatLaneCommands(profile) {
   const { lintBuild, unit, e2e } = profile.suggestedLaneCommands;
-  const lines = ['## Suggested commands (from scan)', '', '### lint-build', '```json', JSON.stringify(lintBuild, null, 2), '```', '', '### unit', '```json', JSON.stringify(unit, null, 2), '```'];
+  const lines = [
+    '## Suggested commands (from scan)',
+    '',
+    '### lint-build',
+    '```json',
+    JSON.stringify(lintBuild, null, 2),
+    '```',
+    '',
+    '### unit',
+    '```json',
+    JSON.stringify(unit, null, 2),
+    '```',
+  ];
   lines.push('', '### e2e', '```json', JSON.stringify(e2e ? { default: e2e } : null, null, 2), '```');
   return lines.join('\n');
-}
-
-function buildCodebaseOverview(profile, vars) {
-  return [
-    '# Codebase overview',
-    '',
-    `> Auto-generated at bootstrap. Re-run \`node scripts/generate-specs.mjs\` after major structural changes.`,
-    '',
-    `**Project:** ${vars.PROJECT_NAME || 'n/a'}`,
-    `**Scanned:** ${profile.scannedAt}`,
-    `**Root:** \`${profile.root}\``,
-    '',
-    '## Summary',
-    '',
-    `- Git repository: ${profile.git ? 'yes' : 'no'}`,
-    `- Package managers: ${profile.packageManagers.join(', ') || 'none detected'}`,
-    `- Test frameworks: ${profile.testFrameworks.join(', ') || 'none detected'}`,
-    `- CI workflows: ${profile.ciWorkflows.length ? profile.ciWorkflows.map((w) => `\`${w}\``).join(', ') : 'none'}`,
-    '',
-    '## Agent docs already present',
-    '',
-    profile.agentDocs.length ? profile.agentDocs.map((d) => `- \`${d}\``).join('\n') : '_None detected._',
-    '',
-    '## Integration hints',
-    '',
-    formatIntegrationHints(profile),
-    '',
-    '## Related',
-    '',
-    '- [structure.md](structure.md) — directories and packages',
-    '- [stack.md](stack.md) — tooling and CI',
-    '- [../testing/strategy.md](../testing/strategy.md) — test strategy',
-  ].join('\n');
-}
-
-function buildCodebaseStructure(profile) {
-  return [
-    '# Codebase structure',
-    '',
-    `Scanned: ${profile.scannedAt}`,
-    '',
-    '## Top-level directories',
-    '',
-    formatDirs(profile),
-    '',
-    '## Packages',
-    '',
-    formatPackages(profile),
-  ].join('\n');
-}
-
-function buildCodebaseStack(profile) {
-  const ci = profile.ciWorkflows.length
-    ? profile.ciWorkflows.map((w) => `- \`${w}\``).join('\n')
-    : '_No CI workflows detected._';
-  return [
-    '# Stack and tooling',
-    '',
-    '## Package managers',
-    '',
-    profile.packageManagers.length ? profile.packageManagers.map((p) => `- ${p}`).join('\n') : '_None detected._',
-    '',
-    '## Test frameworks (from dependencies)',
-    '',
-    profile.testFrameworks.length ? profile.testFrameworks.map((f) => `- ${f}`).join('\n') : '_None detected._',
-    '',
-    '## CI',
-    '',
-    ci,
-  ].join('\n');
 }
 
 function buildTestingStrategy(profile, vars) {
@@ -148,7 +85,9 @@ function buildTestingStrategy(profile, vars) {
     '',
     '## Frameworks detected',
     '',
-    profile.testFrameworks.length ? profile.testFrameworks.map((f) => `- ${f}`).join('\n') : '_None — add conventions when tests are introduced._',
+    profile.testFrameworks.length
+      ? profile.testFrameworks.map((f) => `- ${f}`).join('\n')
+      : '_None — add conventions when tests are introduced._',
     '',
     '## Fast loop (during development)',
     '',
@@ -160,6 +99,11 @@ function buildTestingStrategy(profile, vars) {
     '- Handoff: `npm run validation-lane:handoff -- --name <slug> ...`',
     '- Merge report: `docs/workflow/reports/<date>-<slug>.md`',
     '',
+    '## Codebase test map',
+    '',
+    '- [codebase/TESTING.md](codebase/TESTING.md) — inventory and CI',
+    '- [codebase/DISCOVERY.md](codebase/DISCOVERY.md) — discovery index',
+    '',
     formatLaneCommands(profile),
     '',
     '## Traceability',
@@ -168,13 +112,40 @@ function buildTestingStrategy(profile, vars) {
   ].join('\n');
 }
 
-export function generateSpecs(target, vars = {}) {
+function resolveCodebaseMap(target, profile, vars, options = {}) {
+  const specsCodebase = path.join(target, '.specs', 'codebase');
+  const bootstrapCodebase = path.join(target, 'docs', 'workflow', 'bootstrap', 'codebase');
+
+  if (fs.existsSync(bootstrapCodebase)) {
+    const files = fs.readdirSync(bootstrapCodebase).filter((f) => f.endsWith('.md'));
+    if (files.length >= 8) {
+      copyDirRecursive(bootstrapCodebase, specsCodebase);
+      return { source: 'bootstrap', path: bootstrapCodebase };
+    }
+  }
+
+  const enrichmentPending = !fs.existsSync(bootstrapCodebase);
+  mapCodebase(profile, specsCodebase, {
+    merge: options.merge,
+    vars: {
+      ...vars,
+      enrichmentPending,
+      MAP_STATUS: enrichmentPending
+        ? 'scaffold only — run Part A Phase 1b or re-bootstrap with agent enrichment'
+        : undefined,
+    },
+  });
+
+  const profileJsonPath = path.join(specsCodebase, '.profile.json');
+  writeFile(profileJsonPath, JSON.stringify(profile, null, 2));
+  return { source: enrichmentPending ? 'scaffold-fallback' : 'map', path: specsCodebase };
+}
+
+export function generateSpecs(target, vars = {}, options = {}) {
   const profile = buildProfile(target);
   const specsRoot = path.join(target, '.specs');
 
-  writeFile(path.join(specsRoot, 'codebase', 'overview.md'), buildCodebaseOverview(profile, vars));
-  writeFile(path.join(specsRoot, 'codebase', 'structure.md'), buildCodebaseStructure(profile));
-  writeFile(path.join(specsRoot, 'codebase', 'stack.md'), buildCodebaseStack(profile));
+  resolveCodebaseMap(target, profile, vars, options);
   writeFile(path.join(specsRoot, 'testing', 'strategy.md'), buildTestingStrategy(profile, vars));
 
   const tplFiles = [
@@ -192,9 +163,9 @@ export function generateSpecs(target, vars = {}) {
 }
 
 function main() {
-  const { target, config } = parseArgs(process.argv);
+  const { target, config, merge } = parseArgs(process.argv);
   const vars = config && fs.existsSync(config) ? JSON.parse(fs.readFileSync(config, 'utf8')) : {};
-  generateSpecs(target, vars);
+  generateSpecs(target, vars, { merge });
   console.log('Specs generation complete.');
 }
 

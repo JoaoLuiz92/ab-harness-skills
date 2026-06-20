@@ -2,5 +2,5 @@
   "validation-lane:handoff": "node scripts/validation-lane.mjs --write-handoff",
   "validation-lane:runner": "node scripts/validation-lane.mjs",
   "validation-lane:merge": "node scripts/validation-lane.mjs --merge",
-  "specs:refresh": "node scripts/generate-specs.mjs --target ."
+  "specs:refresh": "node scripts/scan-profile.mjs --json --out .specs/codebase/.profile.json && node scripts/map-codebase.mjs --profile .specs/codebase/.profile.json --out .specs/codebase/ --merge"
 }

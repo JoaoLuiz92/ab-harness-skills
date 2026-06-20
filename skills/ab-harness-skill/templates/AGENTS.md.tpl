@@ -5,6 +5,7 @@ Guidance for AI coding agents. **Read [workflow.config.md](workflow.config.md) e
 ## Workflow
 
 - Specs map: [.specs/README.md](.specs/README.md)
+- Codebase map: [.specs/codebase/DISCOVERY.md](.specs/codebase/DISCOVERY.md)
 - Methodology: [docs/workflow/README.md](docs/workflow/README.md)
 - Task queue: {{TASKS_SOURCE}}
 - Validation lane: [docs/workflow/test-lane.md](docs/workflow/test-lane.md)

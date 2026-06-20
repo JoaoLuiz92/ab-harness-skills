@@ -5,7 +5,7 @@ Agent development methodology for **{{PROJECT_NAME}}**.
 ## Start here (every session)
 
 1. Read [workflow.config.md](../../workflow.config.md) at repo root
-2. Skim [.specs/codebase/overview.md](../../.specs/codebase/overview.md) and [.specs/project/context.md](../../.specs/project/context.md)
+2. Skim [.specs/codebase/DISCOVERY.md](../../.specs/codebase/DISCOVERY.md) and [.specs/project/context.md](../../.specs/project/context.md)
 3. Read [next_actions.md](next_actions.md) for current queue
 4. Follow [test-lane.md](test-lane.md) when closing deliveries
 
@@ -22,7 +22,7 @@ Agent development methodology for **{{PROJECT_NAME}}**.
 
 ```
 .specs/                 (codebase map + SDD artifacts)
-├── codebase/           overview, structure, stack
+├── codebase/           DISCOVERY, STACK, ARCHITECTURE, STRUCTURE, CONVENTIONS, TESTING, INTEGRATIONS, CONCERNS
 ├── project/            context from bootstrap
 ├── features/<name>/    spec, design, tasks
 ├── quick/              small-scope specs
