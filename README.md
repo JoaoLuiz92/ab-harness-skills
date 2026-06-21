@@ -12,13 +12,17 @@ Supports **Cursor**, **Claude Code**, and **OpenAI Codex**. Stack-agnostic.
 
 ### Install
 
-Run from the **target repository** root (installs into `.cursor/skills/` for this project):
+Run from the **target repository** root. The CLI asks which agent you use (Cursor, Claude Code, Codex, etc.):
 
 ```bash
-npx skills add JoaoLuiz92/ab-harness-skills@ab-harness-skill -a cursor --copy -y
+npx skills add JoaoLuiz92/ab-harness-skills@ab-harness-skill
 ```
 
-Add `-g` if you prefer a user-wide install (`~/.cursor/skills/`) instead of committing the skill with the repo.
+Optional flags:
+
+- `-y` — skip confirmation prompts
+- `-a claude-code` / `-a cursor` / `-a codex` — target one agent without the picker
+- `-g` — user-wide install instead of project scope (`.agents/skills/`)
 
 In Agent chat: `/ab-harness-skill` or ask to *bootstrap workflow on this repo*.
 
