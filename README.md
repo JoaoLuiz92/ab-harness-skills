@@ -1,10 +1,11 @@
 # ab-harness-skills
 
-[![skills.sh](https://img.shields.io/badge/skills.sh-ab--harness--skill-blue)](https://skills.sh)
+[![skills.sh](https://img.shields.io/badge/skills.sh-ab--harness--skill-blue)](https://skills.sh/JoaoLuiz92/ab-harness-skills/ab-harness-skill)
+[![version](https://img.shields.io/badge/version-1.9.0-green)](skills/ab-harness-skill/CHANGELOG.md)
 
 Portable **agent development harness** for any codebase — spec-driven delivery, isolated validation lanes, merge gates, and optional integrations (Jira, GitHub, Confluence).
 
-Supports **Cursor**, **Claude Code**, and **OpenAI Codex**. Stack-agnostic.
+Supports **Cursor**, **Claude Code**, and **OpenAI Codex**. Stack-agnostic (Node, Go, Django, .NET, Java/Spring, Python, Rust, and more).
 
 ---
 
@@ -24,9 +25,9 @@ Optional flags:
 - `-a claude-code` / `-a cursor` / `-a codex` — target one agent without the picker
 - `-g` — user-wide install instead of project scope (`.agents/skills/`)
 
-In Agent chat: `/ab-harness-skill` or ask to *bootstrap workflow on this repo*.
+Then in Agent chat: `/ab-harness-skill` or ask to *bootstrap workflow on this repo*.
 
-Also discoverable on [skills.sh](https://skills.sh/JoaoLuiz92/ab-harness-skills/ab-harness-skill).
+Also on [skills.sh](https://skills.sh/JoaoLuiz92/ab-harness-skills/ab-harness-skill).
 
 ### What the skill does
 
@@ -39,8 +40,8 @@ Bootstrap on a **target repository** in three parts and six phases:
 | 1a | Scan | `docs/workflow/bootstrap/profile.json` + 8 codebase docs |
 | 1b | Enrich | Optional agent fill of `<!-- AGENT:complete -->` sections |
 | 2 | Interview | AskQuestion rounds (tools, integrations, branches, UI flag) |
-| 3 | Gap analysis | `gap-report.md` (maturity scores 0–4 per pillar) |
-| 4 | Plan | `harness-plan.md` + `tasks.md`; **AskQuestion approval** before install |
+| 3 | Gap analysis | `docs/workflow/bootstrap/gap-report.md` (maturity scores 0–4 per pillar) |
+| 4 | Plan | `docs/workflow/bootstrap/harness-plan.md` + `tasks.md`; **AskQuestion approval** before install |
 
 **Part B — Install (Phase 5):** copies approved plan into `.specs/`, `workflow.config.md`, adapters, and validation lane.
 
@@ -74,7 +75,7 @@ After install, your repo gains:
 
 See [`examples/test-pilot-repo`](examples/test-pilot-repo) for a live reference.
 
-> **Tip — calibrate `lane-commands.json` before first run.** After install, open `docs/workflow/lane-commands.json` and verify the `lint-build`, `unit`, `e2e`, and `uat` commands match your stack's actual commands. Stacks outside the auto-detected set (Node, Java, Go, Django, .NET) will likely contain `exit 1` placeholder commands that **must** be replaced before running the validation lane. Running the lane against uncalibrated commands produces a false confidence signal.
+> **Tip — calibrate `lane-commands.json` before first run.** After install, open `docs/workflow/lane-commands.json` and verify the `lint-build`, `unit`, `e2e`, and `uat` commands match your stack's actual commands. Auto-detection covers Node, Go, Django, .NET, Java/Spring, Python, Ruby, and PHP; other stacks get explicit `exit 1` placeholders that **must** be replaced before running the validation lane. Uncalibrated commands produce a false confidence signal.
 
 ### When NOT to use
 
@@ -99,19 +100,24 @@ The harness is **not** a good fit for:
 
 ```
 ab-harness-skills/
-├── skills/ab-harness-skill/    # Publishable skill (skills.sh)
-│   ├── SKILL.md                # Skill entry point + full instructions
-│   ├── references/             # Methodology docs, checklists, adapters
-│   ├── templates/              # All .tpl files installed into target repos
-│   └── scripts/                # install-harness.mjs, scan-profile.mjs, etc.
+├── skills/ab-harness-skill/        # Publishable skill (skills.sh)
+│   ├── SKILL.md                    # Skill entry point + full instructions
+│   ├── CHANGELOG.md
+│   ├── references/                 # Methodology docs, checklists, adapters
+│   ├── templates/                  # All .tpl files installed into target repos
+│   └── scripts/                    # install-harness.mjs, scan-profile.mjs, etc.
+├── examples/test-pilot-repo/       # Live post-install reference
 ├── tests/
 │   ├── fixtures/minimal-repo/      # Smoke-test fixture (Node)
 │   ├── fixtures/brownfield-repo/   # 8-doc map smoke fixture
 │   ├── fixtures/harness-only-repo/ # Harness-only gate fixture
-│   ├── fixtures/go-repo/           # Go stack fixture
-│   ├── fixtures/django-repo/       # Django stack fixture
-│   └── fixtures/dotnet-repo/       # .NET stack fixture
-├── scripts/test-skill-package.mjs  # Full test suite
+│   ├── fixtures/go-repo/
+│   ├── fixtures/django-repo/
+│   ├── fixtures/dotnet-repo/
+│   └── fixtures/spring-repo/
+├── scripts/
+│   ├── test-skill-package.mjs      # Full test suite
+│   └── regenerate-pilot-example.mjs
 ├── docs/sample-harness-plan.md     # Example Phase 4 output
 └── docs/sample-codebase-map/       # Frozen 8-doc map from brownfield fixture
 ```
@@ -122,8 +128,11 @@ ab-harness-skills/
 # Run all smoke tests (layout + scan + install + validation lane + UAT + agents merge)
 npm run test:skill-package
 
-# Also test npx skills add --copy end-to-end
+# Also test npx skills add end-to-end
 npm run test:skill-install
+
+# Refresh examples/test-pilot-repo from latest templates
+npm run regenerate:pilot-example
 ```
 
 ### Adding a new template
